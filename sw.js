@@ -1,6 +1,6 @@
-const CACHE='aula-compas-v3-logo-oficial';
+const CACHE='aula-compas-v4-supabase';
 const ASSETS=[
-'./','./index.html','./styles.css','./data.js','./app.js','./manifest.json',
+'./','./index.html','./styles.css','./app.js','./supabase-config.js','./manifest.json',
 './assets/logo.webp','./assets/logo-texto-oficial.png','./assets/logo-completo-oficial.png','./assets/icono-oficial.png','./assets/icon-192.png','./assets/icon-512.png',
 './assets/hero-lanzamiento.webp','./assets/curso-compas.webp','./assets/curso-memoria.webp',
 './assets/curso-legado.webp','./assets/curso-mes.webp','./assets/curso-historia.webp',
