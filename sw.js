@@ -1,11 +1,84 @@
-const CACHE='aula-compas-v4-supabase';
-const ASSETS=[
-'./','./index.html','./styles.css','./app.js','./supabase-config.js','./manifest.json',
-'./assets/logo.webp','./assets/logo-texto-oficial.png','./assets/logo-completo-oficial.png','./assets/icono-oficial.png','./assets/icon-192.png','./assets/icon-512.png',
-'./assets/hero-lanzamiento.webp','./assets/curso-compas.webp','./assets/curso-memoria.webp',
-'./assets/curso-legado.webp','./assets/curso-mes.webp','./assets/curso-historia.webp',
-'./assets/curso-ia.webp','./assets/recurso-manual.webp','./assets/recurso-cuentos.webp','./assets/ruben.webp'
+const CACHE = 'aula-compas-v5-2-flat-images';
+const STATIC_ASSETS = [
+  './',
+  './index.html',
+  './404.html',
+  './styles.css?v=5.2.0',
+  './app.js?v=5.2.0',
+  './bootstrap.js?v=5.2.0',
+  './supabase-config.js?v=5.2.0',
+  './manifest.json',
+  './diagnostico.html',
+  './limpiar-cache.html',
+  './verificar-imagenes.html',
+  './curso-compas.webp',
+  './curso-historia.webp',
+  './curso-ia.webp',
+  './curso-legado.webp',
+  './curso-memoria.webp',
+  './curso-mes.webp',
+  './hero-lanzamiento.webp',
+  './icon-192.png',
+  './icon-512.png',
+  './icono-oficial.png',
+  './logo-completo-oficial.png',
+  './logo-texto-oficial.png',
+  './logo.webp',
+  './recurso-cuentos.webp',
+  './recurso-manual.webp',
+  './ruben.webp'
 ];
-self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)));self.skipWaiting();});
-self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});
-self.addEventListener('fetch',event=>{if(event.request.method!=='GET')return;event.respondWith(caches.match(event.request).then(cached=>cached||fetch(event.request).then(response=>{const copy=response.clone();caches.open(CACHE).then(cache=>cache.put(event.request,copy));return response;}).catch(()=>caches.match('./index.html'))));});
+
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE).then(cache =>
+      Promise.allSettled(STATIC_ASSETS.map(asset => cache.add(asset)))
+    )
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key))))
+      .then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') return;
+
+  const url = new URL(event.request.url);
+  const sameOrigin = url.origin === self.location.origin;
+  const isCritical =
+    event.request.mode === 'navigate' ||
+    (sameOrigin && /\.(?:html|js|css)$/i.test(url.pathname));
+
+  if (isCritical) {
+    event.respondWith(
+      fetch(event.request, { cache: 'no-store' })
+        .then(response => {
+          if (response.ok && sameOrigin) {
+            const copy = response.clone();
+            caches.open(CACHE).then(cache => cache.put(event.request, copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request).then(cached => cached || caches.match('./index.html')))
+    );
+    return;
+  }
+
+  if (sameOrigin) {
+    event.respondWith(
+      caches.match(event.request).then(cached => cached || fetch(event.request).then(response => {
+        if (response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE).then(cache => cache.put(event.request, copy));
+        }
+        return response;
+      }))
+    );
+  }
+});

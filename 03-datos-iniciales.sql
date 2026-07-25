@@ -9,10 +9,10 @@ begin;
 insert into public.courses
 (id, title, slug, subtitle, description, cover_url, category, status, featured)
 values
-('11111111-1111-4111-8111-111111111111','El Compás del Estratega','el-compas-del-estratega','Tus ideas no necesitan más presión. Necesitan dirección.','Una ruta práctica para ordenar ideas, aprovechar la experiencia y construir un proyecto real.','assets/curso-compas.webp','Estrategia','published',true),
-('22222222-2222-4222-8222-222222222222','Despierta tu memoria','despierta-tu-memoria','Recupera recuerdos valiosos y comienza a construir tu legado.','Curso inicial de memoria, reflexión y escritura de legado.','assets/curso-memoria.webp','Legado','published',false),
-('33333333-3333-4333-8333-333333333333','Legado que Trasciende','legado-que-trasciende','Convierte tus recuerdos en un relato o libro para quienes amas.','Programa de acompañamiento humano y dirección editorial.','assets/curso-legado.webp','Escritura','published',false),
-('44444444-4444-4444-8444-444444444444','Método MES®','metodo-mes','Mindfulness, escritura y serenidad para crear un sistema personal.','Programa de presencia, expresión segura y liberación.','assets/curso-mes.webp','Bienestar','published',false)
+('11111111-1111-4111-8111-111111111111','El Compás del Estratega','el-compas-del-estratega','Tus ideas no necesitan más presión. Necesitan dirección.','Una ruta práctica para ordenar ideas, aprovechar la experiencia y construir un proyecto real.','curso-compas.webp','Estrategia','published',true),
+('22222222-2222-4222-8222-222222222222','Despierta tu memoria','despierta-tu-memoria','Recupera recuerdos valiosos y comienza a construir tu legado.','Curso inicial de memoria, reflexión y escritura de legado.','curso-memoria.webp','Legado','published',false),
+('33333333-3333-4333-8333-333333333333','Legado que Trasciende','legado-que-trasciende','Convierte tus recuerdos en un relato o libro para quienes amas.','Programa de acompañamiento humano y dirección editorial.','curso-legado.webp','Escritura','published',false),
+('44444444-4444-4444-8444-444444444444','Método MES®','metodo-mes','Mindfulness, escritura y serenidad para crear un sistema personal.','Programa de presencia, expresión segura y liberación.','curso-mes.webp','Bienestar','published',false)
 on conflict (id) do update set
   title=excluded.title,
   subtitle=excluded.subtitle,

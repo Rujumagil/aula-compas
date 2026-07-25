@@ -2,8 +2,19 @@ const app = document.querySelector('#app');
 const toast = document.querySelector('#toast');
 const CONFIG = window.SUPABASE_CONFIG;
 
-if (!window.supabase || !CONFIG?.url || !CONFIG?.publishableKey) {
-  app.innerHTML = '<main class="login-screen"><section class="login-card glass"><h1>Error de configuración</h1><p>No se pudo iniciar Supabase. Revisa la conexión a internet y el archivo supabase-config.js.</p></section></main>';
+if (!window.supabase?.createClient || !CONFIG?.url || !CONFIG?.publishableKey) {
+  app.innerHTML = `
+    <main class="login-screen">
+      <section class="login-card glass">
+        <img class="official-lockup" src="logo-completo-oficial.png" alt="Proyecto Compás">
+        <h1>Error de conexión</h1>
+        <p>No se pudo iniciar Supabase.</p>
+        <div class="bootstrap-actions">
+          <a class="btn btn-primary" href="diagnostico.html">Abrir diagnóstico</a>
+          <a class="btn btn-secondary" href="limpiar-cache.html">Limpiar caché</a>
+        </div>
+      </section>
+    </main>`;
   throw new Error('Supabase configuration missing');
 }
 
@@ -63,6 +74,28 @@ function escapeHtml(value = '') {
   })[char]);
 }
 
+
+function normalizeMediaUrl(value, fallback = 'curso-compas.webp') {
+  const raw = String(value || '').trim();
+  if (!raw) return fallback;
+
+  if (/^(https?:|data:|blob:)/i.test(raw)) return raw;
+
+  // Compatible con registros anteriores guardados como assets/archivo.webp.
+  return raw
+    .replace(/^\.?\/?assets\//i, '')
+    .replace(/^\.?\//, '');
+}
+
+function imageErrorFallback(event, fallback = 'curso-compas.webp') {
+  const image = event?.currentTarget;
+  if (!image || image.dataset.fallbackApplied === 'true') return;
+  image.dataset.fallbackApplied = 'true';
+  image.src = fallback;
+}
+
+window.imageErrorFallback = imageErrorFallback;
+
 function slugify(text = '') {
   return text
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -75,7 +108,7 @@ function loadingScreen(message = 'Preparando tu aula...') {
   app.innerHTML = `
     <main class="login-screen">
       <section class="login-card glass loading-card">
-        <img class="official-lockup" src="assets/logo-completo-oficial.png" alt="Proyecto Compás">
+        <img class="official-lockup" src="logo-completo-oficial.png" alt="Proyecto Compás">
         <div class="spinner"></div>
         <p>${escapeHtml(message)}</p>
       </section>
@@ -115,7 +148,9 @@ async function init() {
   }
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(console.error);
+    navigator.serviceWorker.register('sw.js?v=5.2.0', { updateViaCache: 'none' })
+      .then(registration => registration.update())
+      .catch(console.error);
   }
 }
 
@@ -241,7 +276,7 @@ function displayName() {
 }
 
 function avatarUrl() {
-  return state.profile?.avatar_url || 'assets/icono-oficial.png';
+  return normalizeMediaUrl(state.profile?.avatar_url, 'icono-oficial.png');
 }
 
 function allLessons(course) {
@@ -272,7 +307,7 @@ function findLesson(course, lessonId) {
 }
 
 function cover(course) {
-  return course.cover_url || 'assets/curso-compas.webp';
+  return normalizeMediaUrl(course.cover_url, 'curso-compas.webp');
 }
 
 function renderAuth(mode = 'login') {
@@ -283,7 +318,7 @@ function renderAuth(mode = 'login') {
     <main class="login-screen">
       <section class="login-card glass auth-card">
         <div class="login-brand">
-          <img class="official-lockup" src="assets/logo-completo-oficial.png" alt="Proyecto Compás">
+          <img class="official-lockup" src="logo-completo-oficial.png" alt="Proyecto Compás">
           <h1>Aula Compás</h1>
           <p>Aprende. Crea. Trasciende.</p>
         </div>
@@ -441,7 +476,7 @@ function renderShell(active) {
     <div class="app-shell">
       <aside class="sidebar">
         <a class="brand" href="#home">
-          <img src="assets/icono-oficial.png" alt="Icono Proyecto Compás">
+          <img src="icono-oficial.png" alt="Icono Proyecto Compás">
           <span><strong>Aula Compás</strong><span>por Proyecto Compás</span></span>
         </a>
 
@@ -458,7 +493,7 @@ function renderShell(active) {
 
         <div class="sidebar-bottom">
           <a class="user-mini" href="#profile">
-            <img src="${escapeHtml(avatarUrl())}" alt="">
+            <img src="${escapeHtml(avatarUrl())}" alt="" onerror="imageErrorFallback(event, 'icono-oficial.png')">
             <span><strong>${escapeHtml(displayName())}</strong><span>${isAdmin() ? 'Administrador' : 'Alumno'}</span></span>
           </a>
         </div>
@@ -520,7 +555,7 @@ async function installApp() {
 function emptyCoursesMessage() {
   return `
     <section class="empty-state glass">
-      <img src="assets/icono-oficial.png" alt="" class="empty-logo">
+      <img src="icono-oficial.png" alt="" class="empty-logo">
       <h2>${isAdmin() ? 'La base de datos todavía no tiene cursos' : 'Aún no tienes cursos asignados'}</h2>
       <p>${isAdmin()
         ? 'Ejecuta el archivo 03-datos-iniciales.sql en Supabase o crea un curso desde Administrar.'
@@ -533,7 +568,7 @@ function courseCard(course) {
   const progress = courseProgress(course);
   return `
     <a class="course-card" href="#course/${course.id}">
-      <img src="${escapeHtml(cover(course))}" alt="${escapeHtml(course.title)}">
+      <img src="${escapeHtml(cover(course))}" alt="${escapeHtml(course.title)}" onerror="imageErrorFallback(event)">
       <div class="card-content">
         ${course.featured ? '<span class="badge">Curso destacado</span>' : ''}
         <h3>${escapeHtml(course.title)}</h3>
@@ -561,7 +596,7 @@ function renderHome() {
     </section>
 
     <section class="hero">
-      <img src="${escapeHtml(cover(featured))}" alt="${escapeHtml(featured.title)}">
+      <img src="${escapeHtml(cover(featured))}" alt="${escapeHtml(featured.title)}" onerror="imageErrorFallback(event)">
       <div class="hero-content">
         <span class="badge">Curso destacado</span>
         <h1>${escapeHtml(featured.title)}</h1>
@@ -641,7 +676,7 @@ function renderCourse(id) {
 
     <section class="course-head">
       <article class="course-cover">
-        <img src="${escapeHtml(cover(course))}" alt="${escapeHtml(course.title)}">
+        <img src="${escapeHtml(cover(course))}" alt="${escapeHtml(course.title)}" onerror="imageErrorFallback(event)">
         <div class="hero-content">
           <span class="badge">${escapeHtml(course.category || 'Curso')}</span>
           <h1>${escapeHtml(course.title)}</h1>
@@ -719,7 +754,7 @@ async function renderLesson(courseId, lessonId) {
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowfullscreen></iframe>
           ` : `
-            <img src="${escapeHtml(cover(course))}" alt="">
+            <img src="${escapeHtml(cover(course))}" alt="" onerror="imageErrorFallback(event)">
             <div class="video-center"><button class="play-button" type="button" id="video-placeholder">▶</button></div>
             <div class="video-bar"><span>Video pendiente</span><div class="video-timeline"><span></span></div><span>⚙ ⛶</span></div>
           `}
@@ -840,7 +875,7 @@ function renderProgress() {
         const progress = courseProgress(course);
         return `
           <div class="list-course">
-            <img src="${escapeHtml(cover(course))}" alt="">
+            <img src="${escapeHtml(cover(course))}" alt="" onerror="imageErrorFallback(event)">
             <div><h3>${escapeHtml(course.title)}</h3><div class="mini-progress"><span style="width:${progress}%"></span></div><small>${progress}% completado</small></div>
             <a class="btn btn-primary" href="#course/${course.id}">Continuar</a>
           </div>`;
@@ -859,7 +894,7 @@ function renderResources() {
     <section class="resources-grid">
       ${state.resources.length ? state.resources.map(resource => `
         <article class="resource-card glass">
-          <img src="${escapeHtml(resource.external_url || 'assets/recurso-manual.webp')}" alt="${escapeHtml(resource.title)}">
+          <img src="${escapeHtml(normalizeMediaUrl(resource.external_url, 'recurso-manual.webp'))}" alt="${escapeHtml(resource.title)}">
           <div class="resource-body">
             <span class="badge">${escapeHtml(resource.resource_type)}</span>
             <h3>${escapeHtml(resource.title)}</h3>
@@ -888,7 +923,7 @@ function renderProfile() {
 
     <section class="profile-grid">
       <article class="profile-card glass">
-        <img src="${escapeHtml(avatarUrl())}" alt="">
+        <img src="${escapeHtml(avatarUrl())}" alt="" onerror="imageErrorFallback(event, 'icono-oficial.png')">
         <h1>${escapeHtml(displayName())}</h1>
         <p>${escapeHtml(state.user.email)}</p>
         <span class="badge">${isAdmin() ? 'Administrador' : 'Alumno'}</span>
@@ -982,7 +1017,7 @@ function renderAdmin() {
           <div class="field"><label>Título</label><input name="title" required></div>
           <div class="field"><label>Subtítulo</label><input name="subtitle"></div>
           <div class="field"><label>Categoría</label><input name="category" value="Formación"></div>
-          <div class="field"><label>Ruta de portada</label><input name="coverUrl" value="assets/curso-compas.webp"></div>
+          <div class="field"><label>Ruta de portada</label><input name="coverUrl" value="curso-compas.webp"></div>
           <button class="btn btn-primary">Crear curso</button>
         </form>
       </article>
@@ -1056,7 +1091,7 @@ async function createCourse(event) {
     slug: `${slugify(title)}-${Date.now().toString().slice(-5)}`,
     subtitle: String(form.get('subtitle')).trim() || null,
     category: String(form.get('category')).trim() || 'Formación',
-    cover_url: String(form.get('coverUrl')).trim() || 'assets/curso-compas.webp',
+    cover_url: String(form.get('coverUrl')).trim() || 'curso-compas.webp',
     status: 'published',
     created_by: state.user.id
   });
@@ -1136,4 +1171,20 @@ async function assignCourse(event) {
 }
 
 window.addEventListener('hashchange', route);
-window.addEventListener('load', init);
+window.addEventListener('load', () => {
+  init().catch(error => {
+    console.error('Fallo al iniciar Aula Compás:', error);
+    app.innerHTML = `
+      <main class="login-screen">
+        <section class="login-card glass">
+          <img class="official-lockup" src="logo-completo-oficial.png" alt="Proyecto Compás">
+          <h1>No pudimos iniciar el aula</h1>
+          <p>${escapeHtml(error?.message || 'Ocurrió un error inesperado.')}</p>
+          <div class="bootstrap-actions">
+            <a class="btn btn-primary" href="diagnostico.html">Abrir diagnóstico</a>
+            <a class="btn btn-secondary" href="limpiar-cache.html">Limpiar versión anterior</a>
+          </div>
+        </section>
+      </main>`;
+  });
+});
