@@ -1,12 +1,12 @@
-const CACHE = 'aula-compas-v5-2-flat-images';
+const CACHE = 'aula-compas-v5-3-responsive-courses';
 const STATIC_ASSETS = [
   './',
   './index.html',
   './404.html',
-  './styles.css?v=5.2.0',
-  './app.js?v=5.2.0',
-  './bootstrap.js?v=5.2.0',
-  './supabase-config.js?v=5.2.0',
+  './styles.css?v=5.3.0',
+  './app.js?v=5.3.0',
+  './bootstrap.js?v=5.3.0',
+  './supabase-config.js?v=5.3.0',
   './manifest.json',
   './diagnostico.html',
   './limpiar-cache.html',

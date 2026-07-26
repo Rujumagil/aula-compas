@@ -68,8 +68,36 @@ function showToast(message, type = 'info') {
   showToast.timer = setTimeout(() => toast.classList.remove('show'), 3200);
 }
 
+function repairTextEncoding(value = '') {
+  const original = String(value ?? '');
+  if (!/[ÃÂ]/.test(original)) return original;
+
+  try {
+    const characters = [...original];
+    if (characters.every(char => char.codePointAt(0) <= 255)) {
+      const bytes = Uint8Array.from(characters, char => char.codePointAt(0));
+      const decoded = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+      if (decoded && !decoded.includes('�')) return decoded;
+    }
+  } catch (error) {
+    console.warn('No se pudo reparar la codificación del texto:', error);
+  }
+
+  return original
+    .replaceAll('Ã¡', 'á')
+    .replaceAll('Ã©', 'é')
+    .replaceAll('Ã­', 'í')
+    .replaceAll('Ã³', 'ó')
+    .replaceAll('Ãº', 'ú')
+    .replaceAll('Ã±', 'ñ')
+    .replaceAll('Ã¼', 'ü')
+    .replaceAll('Â¿', '¿')
+    .replaceAll('Â¡', '¡')
+    .replaceAll('Â', '');
+}
+
 function escapeHtml(value = '') {
-  return String(value).replace(/[&<>"']/g, char => ({
+  return repairTextEncoding(value).replace(/[&<>"']/g, char => ({
     '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
   })[char]);
 }

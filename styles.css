@@ -275,3 +275,250 @@ h1,h2,h3{font-family:Georgia,"Times New Roman",serif;font-weight:500}
 .bootstrap-actions .auth-link{text-align:center}
 .loading-card h1{margin-top:8px}
 .loading-card .official-lockup{max-height:190px}
+
+/* =========================================================
+   V5.3 — CORRECCIÓN DE CURSOS EN CELULAR
+   Separa las imágenes del contenido para evitar superposición.
+   ========================================================= */
+@media(max-width:760px){
+
+  .content{
+    padding:16px 14px 38px;
+  }
+
+  .welcome-line{
+    margin-bottom:16px;
+    gap:8px;
+  }
+
+  .welcome-line h1{
+    font-size:1.95rem;
+    line-height:1.05;
+  }
+
+  .welcome-line p{
+    font-size:.92rem;
+    line-height:1.45;
+  }
+
+  /* Curso destacado: imagen arriba y contenido abajo */
+  .hero{
+    min-height:0;
+    display:grid;
+    grid-template-rows:240px auto;
+    border-radius:24px;
+    overflow:hidden;
+    background:var(--paper);
+  }
+
+  .hero img{
+    position:relative;
+    inset:auto;
+    width:100%;
+    height:240px;
+    object-fit:cover;
+    object-position:76% 50%;
+  }
+
+  .hero::after{
+    display:none;
+  }
+
+  .hero-content{
+    position:relative;
+    inset:auto;
+    bottom:auto;
+    max-width:none;
+    padding:20px 19px 21px;
+    background:
+      linear-gradient(145deg,rgba(255,255,255,.98),rgba(248,241,231,.96));
+  }
+
+  .hero h1{
+    font-size:2rem;
+    line-height:1.02;
+    margin:10px 0 10px;
+    overflow-wrap:anywhere;
+  }
+
+  .hero p{
+    margin-bottom:0;
+    font-size:.92rem;
+    line-height:1.5;
+  }
+
+  .hero-actions{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:10px;
+    margin:17px 0;
+  }
+
+  .hero-actions .btn{
+    width:100%;
+    min-height:48px;
+  }
+
+  .progress-line{
+    display:grid;
+    grid-template-columns:auto minmax(0,1fr);
+    gap:11px;
+    font-size:.76rem;
+  }
+
+  .progress-line .progress-track{
+    width:100%;
+    max-width:none;
+  }
+
+  /* Carrusel: tarjetas con fotografía independiente */
+  .card-row{
+    grid-auto-columns:min(78vw,330px);
+    gap:14px;
+    padding:4px 2px 13px;
+    scroll-padding-inline:2px;
+  }
+
+  .course-card{
+    min-height:0;
+    display:grid;
+    grid-template-rows:138px auto;
+    border-radius:19px;
+    overflow:hidden;
+    background:rgba(255,250,242,.98);
+  }
+
+  .course-card img{
+    position:relative;
+    inset:auto;
+    width:100%;
+    height:138px;
+    object-fit:cover;
+    object-position:76% 50%;
+    background:#edf1f3;
+  }
+
+  .course-card::after{
+    display:none;
+  }
+
+  .card-content{
+    position:relative;
+    inset:auto;
+    left:auto;
+    right:auto;
+    bottom:auto;
+    padding:14px 15px 16px;
+    background:
+      linear-gradient(145deg,rgba(255,255,255,.98),rgba(248,241,231,.96));
+  }
+
+  .card-content .badge{
+    margin-bottom:8px;
+    font-size:.57rem;
+    padding:4px 7px;
+  }
+
+  .card-content h3{
+    margin:0 0 8px;
+    font-size:1.13rem;
+    line-height:1.12;
+    overflow-wrap:anywhere;
+  }
+
+  .card-meta{
+    align-items:center;
+    font-size:.69rem;
+  }
+
+  .mini-progress{
+    margin-top:10px;
+  }
+
+  /* Pantalla Mis cursos */
+  .grid-courses{
+    grid-template-columns:1fr;
+    gap:16px;
+  }
+
+  .grid-courses .course-card{
+    min-height:0;
+    grid-template-rows:190px auto;
+  }
+
+  .grid-courses .course-card img{
+    height:190px;
+  }
+
+  /* Portada interior del curso */
+  .course-cover{
+    min-height:0;
+    display:grid;
+    grid-template-rows:240px auto;
+    border-radius:23px;
+    background:var(--paper);
+  }
+
+  .course-cover img{
+    position:relative;
+    inset:auto;
+    width:100%;
+    height:240px;
+    object-fit:cover;
+    object-position:76% 50%;
+  }
+
+  .course-cover::after{
+    display:none;
+  }
+
+  .course-cover .hero-content{
+    position:relative;
+    inset:auto;
+    padding:20px 19px 22px;
+  }
+
+  .course-cover h1{
+    font-size:2rem;
+    line-height:1.04;
+  }
+
+  .section-heading{
+    align-items:center;
+    gap:12px;
+    margin:28px 0 13px;
+  }
+
+  .section-heading h2{
+    font-size:1.45rem;
+    line-height:1.08;
+  }
+
+  .section-heading .text-link{
+    flex:0 0 auto;
+    font-size:.76rem;
+    white-space:nowrap;
+  }
+}
+
+@media(max-width:390px){
+  .hero{
+    grid-template-rows:215px auto;
+  }
+
+  .hero img{
+    height:215px;
+  }
+
+  .hero h1{
+    font-size:1.82rem;
+  }
+
+  .card-row{
+    grid-auto-columns:82vw;
+  }
+
+  .section-heading h2{
+    font-size:1.32rem;
+  }
+}
