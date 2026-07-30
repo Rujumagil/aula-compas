@@ -90,6 +90,27 @@ Un alumno solamente podrá obtener un enlace temporal cuando tenga una
 inscripción activa en el curso. Consulta `LIBRO-DIGITAL-INSTRUCCIONES.md` para
 el procedimiento de publicación y prueba.
 
+## Plataforma profesional 6.0
+
+La versión 6.0 incorpora:
+
+- catálogo público de cursos y libros;
+- biblioteca privada diferenciada de los cursos;
+- agenda de lanzamientos y webinars;
+- buscador global de cursos, lecciones, libros y ayuda;
+- centro de ayuda con preguntas frecuentes;
+- notificaciones dentro del aula;
+- certificados imprimibles para cursos completados;
+- panel administrativo con estados de publicación;
+- asignación de roles de alumno, instructor y administrador;
+- información comercial por curso: instructor, duración, precio y enlace de pago;
+- permisos para que cada instructor administre únicamente los cursos que creó.
+
+Antes de publicar esta versión, ejecuta en Supabase:
+
+1. `05-acceso-privado-libros-y-roles.sql`
+2. `06-plataforma-profesional-e-instructores.sql`
+
 ## Seguridad
 
 La publishable key puede estar en el navegador porque las tablas utilizan Row Level Security.

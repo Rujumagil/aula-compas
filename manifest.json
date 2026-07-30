@@ -1,11 +1,11 @@
 {
   "name": "Aula Compás | Proyecto Compás",
   "short_name": "Aula Compás",
-  "description": "Aprende, crea y transforma tu experiencia en legado.",
+  "description": "Cursos, libros digitales y herramientas para transformar tu experiencia en dirección y legado.",
   "start_url": "./index.html#home",
   "display": "standalone",
   "background_color": "#f8f1e7",
-  "theme_color": "#f8f1e7",
+  "theme_color": "#062348",
   "orientation": "any",
   "icons": [
     {

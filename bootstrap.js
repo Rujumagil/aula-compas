@@ -78,7 +78,7 @@
       }
 
       await loadSupabaseLibrary();
-      await loadScript(`app.js?v=5.4.1`);
+      await loadScript(`app.js?v=6.0.0`);
 
       // app.js se encarga de reemplazar la pantalla de carga.
       setTimeout(() => {
