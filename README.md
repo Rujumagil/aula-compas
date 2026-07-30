@@ -8,6 +8,7 @@ Ejecuta en Supabase, en este orden:
 
 1. `02-parche-seguridad-y-permisos.sql`
 2. `03-datos-iniciales.sql`
+3. `05-acceso-privado-libros-y-roles.sql`
 
 El primer archivo:
 
@@ -73,6 +74,21 @@ Esto es necesario para confirmación de correo y recuperación de contraseña.
 - Creación de cursos y módulos por administrador.
 - Asignación de cursos.
 - Panel de usuarios e inscripciones.
+- Recuperación completa de contraseña.
+- Recursos y libros digitales en almacenamiento privado.
+- Enlaces temporales para alumnos autorizados.
+- Rol de instructor separado del administrador.
+
+## Entrega privada del libro digital
+
+No subas el HTML del libro al repositorio público. Después de ejecutar
+`05-acceso-privado-libros-y-roles.sql`, abre **Administrar → Agregar libro o
+recurso privado**, selecciona el curso **El Compás del Estratega** y carga el
+archivo HTML. El aula lo guardará en el bucket privado `digital-products`.
+
+Un alumno solamente podrá obtener un enlace temporal cuando tenga una
+inscripción activa en el curso. Consulta `LIBRO-DIGITAL-INSTRUCCIONES.md` para
+el procedimiento de publicación y prueba.
 
 ## Seguridad
 

@@ -38,6 +38,7 @@ const state = {
   progressRows: [],
   profiles: [],
   enrollments: [],
+  recoveryMode: false,
   loading: true
 };
 
@@ -145,6 +146,10 @@ function loadingScreen(message = 'Preparando tu aula...') {
 
 async function init() {
   loadingScreen();
+  const recoveryRequested =
+    new URLSearchParams(location.search).get('type') === 'recovery'
+    || new URLSearchParams(location.hash.replace(/^#/, '')).get('type') === 'recovery';
+  state.recoveryMode = recoveryRequested;
 
   const { data, error } = await db.auth.getSession();
   if (error) console.error(error);
@@ -158,6 +163,12 @@ async function init() {
 
     // Evita llamar a otras funciones de Supabase dentro del callback inmediato.
     setTimeout(async () => {
+      if (event === 'PASSWORD_RECOVERY' || state.recoveryMode) {
+        state.recoveryMode = true;
+        renderPasswordUpdate();
+        return;
+      }
+
       if (session) {
         await loadApplicationData();
         route();
@@ -169,14 +180,18 @@ async function init() {
   });
 
   if (state.session) {
-    await loadApplicationData();
-    route();
+    if (state.recoveryMode) {
+      renderPasswordUpdate();
+    } else {
+      await loadApplicationData();
+      route();
+    }
   } else {
     renderAuth();
   }
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js?v=5.2.0', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('sw.js?v=5.4.0', { updateViaCache: 'none' })
       .then(registration => registration.update())
       .catch(console.error);
   }
@@ -296,6 +311,14 @@ function isAdmin() {
   return state.profile?.role === 'admin';
 }
 
+function isInstructor() {
+  return state.profile?.role === 'instructor';
+}
+
+function canManageContent() {
+  return isAdmin() || isInstructor();
+}
+
 function displayName() {
   return state.profile?.full_name?.trim()
     || state.user?.user_metadata?.full_name
@@ -334,8 +357,45 @@ function findLesson(course, lessonId) {
   return null;
 }
 
+function firstIncompleteLesson(course) {
+  const lessons = allLessons(course);
+  return lessons.find(lesson => !isLessonCompleted(lesson.id)) || lessons[0] || null;
+}
+
 function cover(course) {
   return normalizeMediaUrl(course.cover_url, 'curso-compas.webp');
+}
+
+function sanitizeLessonHtml(value = '') {
+  const template = document.createElement('template');
+  template.innerHTML = String(value || '');
+  const allowedTags = new Set(['H2', 'H3', 'H4', 'P', 'UL', 'OL', 'LI', 'STRONG', 'EM', 'BLOCKQUOTE', 'A', 'BR']);
+  const elements = [...template.content.querySelectorAll('*')];
+
+  elements.forEach(element => {
+    if (!allowedTags.has(element.tagName)) {
+      element.replaceWith(...element.childNodes);
+      return;
+    }
+
+    [...element.attributes].forEach(attribute => {
+      const name = attribute.name.toLowerCase();
+      if (element.tagName === 'A' && name === 'href') {
+        const href = attribute.value.trim();
+        if (!/^(https?:|mailto:)/i.test(href)) element.removeAttribute(attribute.name);
+        return;
+      }
+      if (element.tagName === 'A' && ['target', 'rel'].includes(name)) return;
+      element.removeAttribute(attribute.name);
+    });
+
+    if (element.tagName === 'A' && element.hasAttribute('href')) {
+      element.target = '_blank';
+      element.rel = 'noopener noreferrer';
+    }
+  });
+
+  return template.innerHTML;
 }
 
 function renderAuth(mode = 'login') {
@@ -374,8 +434,18 @@ function renderAuth(mode = 'login') {
             </div>
             <div class="field">
               <label for="password">Contraseña</label>
-              <input id="password" name="password" type="password" minlength="6" autocomplete="${signup ? 'new-password' : 'current-password'}" required>
+              <input id="password" name="password" type="password" minlength="8" autocomplete="${signup ? 'new-password' : 'current-password'}" required>
             </div>
+            ${signup ? `
+              <div class="field">
+                <label for="confirm-password">Confirmar contraseña</label>
+                <input id="confirm-password" name="confirmPassword" type="password" minlength="8" autocomplete="new-password" required>
+              </div>
+              <label class="legal-check">
+                <input name="legalAcceptance" type="checkbox" required>
+                <span>Acepto el <a href="https://www.proyectocompas.com/aviso-de-privacidad.html" target="_blank" rel="noopener">aviso de privacidad</a> y la <a href="https://www.proyectocompas.com/politica-de-cancelacion-y-reembolso.html" target="_blank" rel="noopener">política de cancelación y reembolso</a>.</span>
+              </label>
+            ` : ''}
             <button class="btn btn-primary" type="submit">${signup ? 'Crear mi cuenta' : 'Entrar al aula'}</button>
           </form>
 
@@ -402,6 +472,58 @@ function renderAuth(mode = 'login') {
   }
 }
 
+function renderPasswordUpdate() {
+  app.innerHTML = `
+    <main class="login-screen">
+      <section class="login-card glass auth-card">
+        <div class="login-brand">
+          <img class="official-lockup" src="logo-completo-oficial.png" alt="Proyecto Compás">
+          <h1>Crear nueva contraseña</h1>
+          <p>Elige una contraseña segura para volver al aula.</p>
+        </div>
+        <form id="password-update-form">
+          <div class="field">
+            <label for="new-password">Nueva contraseña</label>
+            <input id="new-password" name="password" type="password" minlength="8" autocomplete="new-password" required>
+          </div>
+          <div class="field">
+            <label for="new-password-confirmation">Confirmar contraseña</label>
+            <input id="new-password-confirmation" name="confirmation" type="password" minlength="8" autocomplete="new-password" required>
+          </div>
+          <button class="btn btn-primary" type="submit">Guardar contraseña</button>
+        </form>
+      </section>
+    </main>`;
+
+  document.querySelector('#password-update-form').addEventListener('submit', handlePasswordUpdate);
+}
+
+async function handlePasswordUpdate(event) {
+  event.preventDefault();
+  const form = new FormData(event.currentTarget);
+  const password = String(form.get('password'));
+  const confirmation = String(form.get('confirmation'));
+
+  if (password !== confirmation) {
+    showToast('Las contraseñas no coinciden.', 'error');
+    return;
+  }
+
+  setFormBusy(event.currentTarget, true);
+  const { error } = await db.auth.updateUser({ password });
+  setFormBusy(event.currentTarget, false);
+
+  if (error) {
+    showToast(translateAuthError(error.message), 'error');
+    return;
+  }
+
+  state.recoveryMode = false;
+  showToast('Contraseña actualizada. Inicia sesión nuevamente.', 'success');
+  await db.auth.signOut();
+  renderAuth('login');
+}
+
 async function handleAuth(event, signup) {
   event.preventDefault();
   const form = new FormData(event.currentTarget);
@@ -413,6 +535,9 @@ async function handleAuth(event, signup) {
   try {
     if (signup) {
       const fullName = String(form.get('fullName')).trim();
+      if (password !== String(form.get('confirmPassword'))) {
+        throw new Error('Las contraseñas no coinciden.');
+      }
       const { data, error } = await db.auth.signUp({
         email,
         password,
@@ -475,7 +600,8 @@ function translateAuthError(message = '') {
   if (text.includes('invalid login credentials')) return 'El correo o la contraseña no son correctos.';
   if (text.includes('email not confirmed')) return 'Debes confirmar tu correo antes de entrar.';
   if (text.includes('user already registered')) return 'Este correo ya tiene una cuenta.';
-  if (text.includes('password should be')) return 'La contraseña debe tener al menos seis caracteres.';
+  if (text.includes('password should be')) return 'La contraseña debe tener al menos ocho caracteres.';
+  if (text.includes('contraseñas no coinciden')) return 'Las contraseñas no coinciden.';
   if (text.includes('rate limit')) return 'Espera un momento antes de volver a intentarlo.';
   return message || 'Ocurrió un problema. Intenta nuevamente.';
 }
@@ -495,7 +621,7 @@ async function route() {
   else if (page === 'profile') renderProfile();
   else if (page === 'course') renderCourse(id);
   else if (page === 'lesson') await renderLesson(id, lessonId);
-  else if (page === 'admin' && isAdmin()) renderAdmin();
+  else if (page === 'admin' && canManageContent()) renderAdmin();
   else renderHome();
 }
 
@@ -513,16 +639,16 @@ function renderShell(active) {
             <a class="nav-link ${active === id ? 'active' : ''}" href="#${id}">
               <span class="nav-icon">${icon}</span>${label}
             </a>`).join('')}
-          ${isAdmin() ? `
+          ${canManageContent() ? `
             <a class="nav-link ${active === 'admin' ? 'active' : ''}" href="#admin">
-              <span class="nav-icon">⚙</span>Administrar
+              <span class="nav-icon">⚙</span>${isAdmin() ? 'Administrar' : 'Mis contenidos'}
             </a>` : ''}
         </nav>
 
         <div class="sidebar-bottom">
           <a class="user-mini" href="#profile">
             <img src="${escapeHtml(avatarUrl())}" alt="" onerror="imageErrorFallback(event, 'icono-oficial.png')">
-            <span><strong>${escapeHtml(displayName())}</strong><span>${isAdmin() ? 'Administrador' : 'Alumno'}</span></span>
+            <span><strong>${escapeHtml(displayName())}</strong><span>${isAdmin() ? 'Administrador' : isInstructor() ? 'Instructor' : 'Alumno'}</span></span>
           </a>
         </div>
       </aside>
@@ -614,7 +740,7 @@ function renderHome() {
   }
 
   const featured = state.courses.find(course => course.featured) || state.courses[0];
-  const firstLesson = allLessons(featured)[0];
+  const firstLesson = firstIncompleteLesson(featured);
   const progress = courseProgress(featured);
 
   page.innerHTML = `
@@ -788,15 +914,15 @@ async function renderLesson(courseId, lessonId) {
           `}
         </div>
 
-        ${lesson.content_html ? `<article class="lesson-content glass">${lesson.content_html}</article>` : ''}
+        ${lesson.content_html ? `<article class="lesson-content glass">${sanitizeLessonHtml(lesson.content_html)}</article>` : ''}
 
         <div class="lesson-actions">
           <button class="action-card" id="complete-current">
             <strong>${isLessonCompleted(lesson.id) ? '✓ Lección completada' : '○ Marcar como completada'}</strong>
             <small>Guarda tu progreso en tu cuenta</small>
           </button>
-          <button class="action-card" id="material-button">
-            <strong>⇩ Descargar guía</strong><small>Material complementario</small>
+          <button class="action-card" id="material-button" ${state.resources.some(resource => resource.course_id === course.id) ? '' : 'disabled'}>
+            <strong>⇩ Abrir material</strong><small>${state.resources.some(resource => resource.course_id === course.id) ? 'Libro, guía o recurso del curso' : 'Material pendiente'}</small>
           </button>
           <button class="action-card" id="focus-notes">
             <strong>✎ Tomar notas</strong><small>Notas privadas</small>
@@ -819,7 +945,10 @@ async function renderLesson(courseId, lessonId) {
 
   document.querySelector('#complete-current').addEventListener('click', () => completeLesson(lesson.id, true));
   document.querySelector('#focus-notes').addEventListener('click', () => document.querySelector('#lesson-notes').focus());
-  document.querySelector('#material-button').addEventListener('click', () => showToast('Agrega el recurso desde el panel administrativo.'));
+  document.querySelector('#material-button').addEventListener('click', () => {
+    const resource = state.resources.find(item => item.course_id === course.id);
+    if (resource) openResource(resource.id);
+  });
   document.querySelector('#video-placeholder')?.addEventListener('click', () => showToast('Agrega el enlace de video desde Supabase.'));
 
   document.querySelector('#lesson-notes').addEventListener('input', event => {
@@ -922,24 +1051,51 @@ function renderResources() {
     <section class="resources-grid">
       ${state.resources.length ? state.resources.map(resource => `
         <article class="resource-card glass">
-          <img src="${escapeHtml(normalizeMediaUrl(resource.external_url, 'recurso-manual.webp'))}" alt="${escapeHtml(resource.title)}">
+          <img src="${escapeHtml(normalizeMediaUrl(resource.thumbnail_url, resource.resource_type === 'book' ? 'curso-compas.webp' : 'recurso-manual.webp'))}" alt="${escapeHtml(resource.title)}" onerror="imageErrorFallback(event, 'recurso-manual.webp')">
           <div class="resource-body">
             <span class="badge">${escapeHtml(resource.resource_type)}</span>
             <h3>${escapeHtml(resource.title)}</h3>
-            <p>Material complementario de Aula Compás.</p>
-            <button class="btn btn-primary" data-resource="${escapeHtml(resource.external_url || resource.file_path || '')}">Abrir recurso</button>
+            <p>${resource.resource_type === 'book' ? 'Libro digital disponible para tu cuenta.' : 'Material complementario de Aula Compás.'}</p>
+            <button class="btn btn-primary" data-resource-id="${escapeHtml(resource.id)}">Abrir recurso</button>
           </div>
         </article>`).join('') : `
         <section class="empty-state glass"><h2>Todavía no hay recursos disponibles.</h2><p>Los materiales aparecerán aquí cuando sean publicados.</p></section>`}
     </section>`;
 
-  document.querySelectorAll('[data-resource]').forEach(button => {
-    button.addEventListener('click', () => {
-      const url = button.dataset.resource;
-      if (url && /^https?:\/\//i.test(url)) window.open(url, '_blank', 'noopener');
-      else showToast('Este recurso todavía no tiene un enlace disponible.');
-    });
+  document.querySelectorAll('[data-resource-id]').forEach(button => {
+    button.addEventListener('click', () => openResource(button.dataset.resourceId));
   });
+}
+
+async function openResource(resourceId) {
+  const resource = state.resources.find(item => item.id === resourceId);
+  if (!resource) {
+    showToast('No encontramos este recurso.', 'error');
+    return;
+  }
+
+  if (resource.external_url && /^https?:\/\//i.test(resource.external_url)) {
+    window.open(resource.external_url, '_blank', 'noopener');
+    return;
+  }
+
+  if (!resource.file_path) {
+    showToast('Este recurso todavía no tiene un archivo disponible.', 'error');
+    return;
+  }
+
+  showToast('Preparando acceso seguro...');
+  const { data, error } = await db.storage
+    .from('digital-products')
+    .createSignedUrl(resource.file_path, 600);
+
+  if (error || !data?.signedUrl) {
+    console.error(error);
+    showToast('No pudimos abrir el recurso. Revisa que tu acceso esté activo.', 'error');
+    return;
+  }
+
+  window.open(data.signedUrl, '_blank', 'noopener');
 }
 
 function renderProfile() {
@@ -954,7 +1110,7 @@ function renderProfile() {
         <img src="${escapeHtml(avatarUrl())}" alt="" onerror="imageErrorFallback(event, 'icono-oficial.png')">
         <h1>${escapeHtml(displayName())}</h1>
         <p>${escapeHtml(state.user.email)}</p>
-        <span class="badge">${isAdmin() ? 'Administrador' : 'Alumno'}</span>
+        <span class="badge">${isAdmin() ? 'Administrador' : isInstructor() ? 'Instructor' : 'Alumno'}</span>
       </article>
 
       <article class="settings-card glass">
@@ -971,7 +1127,7 @@ function renderProfile() {
         </form>
 
         <div class="settings-row"><div><strong>Instalar Aula Compás</strong><small>Agrega la aplicación a tu pantalla de inicio.</small></div><button class="btn btn-secondary" data-install>Instalar</button></div>
-        ${isAdmin() ? '<div class="settings-row"><div><strong>Panel administrativo</strong><small>Gestiona cursos, módulos e inscripciones.</small></div><a class="btn btn-secondary" href="#admin">Abrir panel</a></div>' : ''}
+        ${canManageContent() ? '<div class="settings-row"><div><strong>Panel de contenidos</strong><small>Gestiona cursos, módulos y materiales según tus permisos.</small></div><a class="btn btn-secondary" href="#admin">Abrir panel</a></div>' : ''}
         <div class="settings-row"><div><strong>Cerrar sesión</strong><small>Finaliza la sesión en este dispositivo.</small></div><button class="btn btn-secondary" id="logout-button">Salir</button></div>
       </article>
     </section>`;
@@ -1033,9 +1189,9 @@ function renderAdmin() {
     <p class="page-subtitle">Crea la estructura académica y asigna cursos a las personas que ya se registraron.</p>
 
     <section class="admin-grid">
-      <article class="admin-card glass"><strong>${state.profiles.length}</strong><span>Usuarios registrados</span></article>
+      <article class="admin-card glass"><strong>${isAdmin() ? state.profiles.length : state.courses.length}</strong><span>${isAdmin() ? 'Usuarios registrados' : 'Cursos administrados'}</span></article>
       <article class="admin-card glass"><strong>${state.courses.length}</strong><span>Cursos visibles</span></article>
-      <article class="admin-card glass"><strong>${state.enrollments.length}</strong><span>Inscripciones</span></article>
+      <article class="admin-card glass"><strong>${isAdmin() ? state.enrollments.length : state.courses.reduce((sum, course) => sum + course.modules.length, 0)}</strong><span>${isAdmin() ? 'Inscripciones' : 'Módulos publicados'}</span></article>
     </section>
 
     <section class="admin-layout">
@@ -1060,7 +1216,7 @@ function renderAdmin() {
         </form>
       </article>
 
-      <article class="settings-card glass">
+      ${isAdmin() ? `<article class="settings-card glass">
         <div class="section-heading"><h2>Asignar curso</h2></div>
         <form id="enrollment-form" class="stack-form">
           <div class="field"><label>Alumno</label><select name="userId" required>${studentOptions || '<option value="">No hay alumnos registrados</option>'}</select></div>
@@ -1068,7 +1224,7 @@ function renderAdmin() {
           <button class="btn btn-primary" ${!studentOptions || !courseOptions ? 'disabled' : ''}>Asignar acceso</button>
         </form>
         <div class="demo-note">Por seguridad, los alumnos crean su propia cuenta desde la pantalla de registro. Después aparecerán aquí para que les asignes un curso.</div>
-      </article>
+      </article>` : ''}
     </section>
 
     <section class="settings-card glass" style="margin-top:18px">
@@ -1087,6 +1243,32 @@ function renderAdmin() {
     </section>
 
     <section class="settings-card glass" style="margin-top:18px">
+      <div class="section-heading"><h2>Agregar libro o recurso privado</h2></div>
+      <p class="page-subtitle">El archivo se guarda en un depósito privado. Solo podrán abrirlo las personas autorizadas para el curso seleccionado.</p>
+      <form id="resource-form" class="admin-form admin-resource-form">
+        <select name="courseId">
+          <option value="">Recurso general</option>
+          ${courseOptions}
+        </select>
+        <input name="title" placeholder="Título del recurso" required>
+        <select name="resourceType" required>
+          <option value="book">Libro digital</option>
+          <option value="pdf">PDF</option>
+          <option value="template">Plantilla</option>
+          <option value="audio">Audio</option>
+          <option value="link">Enlace</option>
+        </select>
+        <input name="externalUrl" type="url" placeholder="Enlace externo opcional">
+        <label class="file-field">
+          <span>Archivo privado</span>
+          <input name="file" type="file" accept=".html,.htm,.pdf,.epub,.zip,.mp3,.m4a,.wav">
+        </label>
+        <button class="btn btn-primary">Guardar recurso</button>
+      </form>
+      <div class="demo-note">Para el libro digital utiliza el archivo HTML que contiene las 106 páginas. No lo subas al repositorio público.</div>
+    </section>
+
+    ${isAdmin() ? `<section class="settings-card glass" style="margin-top:18px">
       <div class="section-heading"><h2>Usuarios e inscripciones</h2></div>
       <table class="admin-table">
         <thead><tr><th>Usuario</th><th>Correo</th><th>Rol</th><th>Cursos asignados</th></tr></thead>
@@ -1100,12 +1282,13 @@ function renderAdmin() {
           }).join('')}
         </tbody>
       </table>
-    </section>`;
+    </section>` : ''}`;
 
   document.querySelector('#course-form').addEventListener('submit', createCourse);
   document.querySelector('#module-form').addEventListener('submit', createModule);
   document.querySelector('#lesson-form').addEventListener('submit', createLesson);
-  document.querySelector('#enrollment-form').addEventListener('submit', assignCourse);
+  document.querySelector('#resource-form').addEventListener('submit', createResource);
+  document.querySelector('#enrollment-form')?.addEventListener('submit', assignCourse);
 }
 
 async function createCourse(event) {
@@ -1177,6 +1360,63 @@ async function createLesson(event) {
   showToast('Lección agregada.', 'success');
   await loadApplicationData();
   renderAdmin();
+}
+
+async function createResource(event) {
+  event.preventDefault();
+  const form = new FormData(event.currentTarget);
+  const file = form.get('file');
+  const externalUrl = String(form.get('externalUrl') || '').trim();
+  const courseId = String(form.get('courseId') || '').trim();
+
+  if ((!file || !file.size) && !externalUrl) {
+    showToast('Selecciona un archivo o agrega un enlace externo.', 'error');
+    return;
+  }
+
+  setFormBusy(event.currentTarget, true);
+  let filePath = null;
+
+  try {
+    if (file?.size) {
+      const cleanName = file.name
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9._-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+      filePath = `courses/${courseId || 'general'}/${Date.now()}-${cleanName}`;
+      const contentType = /\.html?$/i.test(file.name)
+        ? 'text/html; charset=utf-8'
+        : file.type || 'application/octet-stream';
+      const { error: uploadError } = await db.storage
+        .from('digital-products')
+        .upload(filePath, file, { contentType, upsert: false });
+      if (uploadError) throw uploadError;
+    }
+
+    const { error } = await db.from('resources').insert({
+      course_id: courseId || null,
+      title: String(form.get('title')).trim(),
+      resource_type: String(form.get('resourceType')).trim(),
+      external_url: externalUrl || null,
+      file_path: filePath,
+      is_public: false
+    });
+    if (error) throw error;
+
+    showToast('Recurso privado guardado.', 'success');
+    event.currentTarget.reset();
+    await loadApplicationData();
+    renderAdmin();
+  } catch (error) {
+    console.error(error);
+    if (filePath) {
+      await db.storage.from('digital-products').remove([filePath]).catch(() => {});
+    }
+    showToast(error.message || 'No se pudo guardar el recurso.', 'error');
+  } finally {
+    setFormBusy(event.currentTarget, false);
+  }
 }
 
 async function assignCourse(event) {
