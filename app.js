@@ -28,6 +28,11 @@ const db = window.supabase.createClient(CONFIG.url, CONFIG.publishableKey, {
 
 let deferredPrompt = null;
 let notesTimer = null;
+const WHATSAPP_NUMBER = '5213336646803';
+
+function whatsappUrl(message = 'Hola, necesito información sobre Aula Compás.') {
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+}
 
 const state = {
   session: null,
@@ -119,7 +124,7 @@ const HELP_TOPICS = [
   ['¿Cómo entro a un curso que compré?', 'Crea tu cuenta con el mismo correo utilizado en la compra. Cuando el pago sea validado, el curso aparecerá en “Mis cursos”.'],
   ['¿Dónde encuentro mi libro digital?', 'Abre “Biblioteca” y selecciona el libro. El sistema genera un acceso privado temporal para proteger tu compra.'],
   ['¿Cómo recupero mi contraseña?', 'Cierra tu sesión, selecciona “Olvidé mi contraseña” y revisa el enlace enviado a tu correo.'],
-  ['Mi pago todavía no aparece', 'Envía tu comprobante y el correo de registro a proyectocompas.info@gmail.com para que revisemos tu acceso.'],
+  ['Mi pago todavía no aparece', 'Escríbenos por WhatsApp con tu comprobante, nombre y correo de registro para que revisemos tu acceso.'],
   ['¿Puedo usar el aula desde mi celular?', 'Sí. Aula Compás es adaptable y también puedes instalarla desde el botón disponible en tu perfil.'],
   ['¿Cómo obtengo mi certificado?', 'Completa todas las lecciones del curso. Después podrás abrir e imprimir tu certificado desde la sección de progreso.']
 ];
@@ -732,6 +737,7 @@ function publicProgramCard(program) {
             <a class="btn btn-primary" href="${escapeHtml(program.paymentUrl)}" target="_blank" rel="noopener">Inscribirme</a>
             <a class="btn btn-secondary" href="https://mpago.la/23omJUk" target="_blank" rel="noopener">Apartar con $100</a>
           </div>
+          <a class="catalog-whatsapp" href="${escapeHtml(whatsappUrl(`Hola, quiero información sobre ${program.title} en Aula Compás.`))}" target="_blank" rel="noopener">¿Tienes dudas? Escríbenos por WhatsApp</a>
         ` : '<div class="coming-note">Estamos preparando esta experiencia.</div>'}
       </div>
     </article>`;
@@ -818,7 +824,7 @@ function renderPublicCatalog(section = '') {
       <footer class="public-footer">
         <img src="logo-texto-oficial.png" alt="Proyecto Compás">
         <p>Aprende. Crea. Trasciende.</p>
-        <div><a href="mailto:proyectocompas.info@gmail.com">Contacto</a><a href="https://www.proyectocompas.com/aviso-de-privacidad.html">Privacidad</a><a href="https://www.proyectocompas.com/politica-de-cancelacion-y-reembolso.html">Reembolsos</a></div>
+        <div><a href="${whatsappUrl('Hola, quiero información sobre Proyecto Compás.')}" target="_blank" rel="noopener">WhatsApp</a><a href="https://www.proyectocompas.com/aviso-de-privacidad.html">Privacidad</a><a href="https://www.proyectocompas.com/politica-de-cancelacion-y-reembolso.html">Reembolsos</a></div>
       </footer>
     </div>`;
 
@@ -1496,7 +1502,7 @@ function renderAgenda() {
               <div class="agenda-access">
                 <strong>${past ? 'Consulta la grabación' : 'Acceso para inscritos'}</strong>
                 <small>${past ? 'Si forma parte de tu compra, aparecerá en tus recursos.' : 'El enlace se compartirá con las cuentas autorizadas.'}</small>
-                <a class="btn btn-secondary" href="mailto:proyectocompas.info@gmail.com?subject=Acceso%20a%20evento%20Aula%20Compás">Solicitar ayuda</a>
+                <a class="btn btn-secondary" href="${whatsappUrl(`Hola, necesito ayuda con el acceso al evento: ${event.title}.`)}" target="_blank" rel="noopener">Solicitar ayuda</a>
               </div>
             </article>`;
         }).join('')}
@@ -1549,15 +1555,15 @@ function renderHelp() {
               <p>${escapeHtml(answer)}</p>
             </details>`).join('')}
         </div>
-        <p class="empty-help hide" id="empty-help">No encontramos una respuesta. Puedes escribirnos directamente.</p>
+        <p class="empty-help hide" id="empty-help">No encontramos una respuesta. Puedes escribirnos por WhatsApp.</p>
       </article>
 
       <aside class="contact-card">
         <span class="eyebrow">Atención personal</span>
         <h2>¿Necesitas que revisemos tu cuenta?</h2>
         <p>Escríbenos incluyendo tu nombre, correo de registro y una descripción del problema.</p>
-        <a class="btn btn-primary" href="mailto:proyectocompas.info@gmail.com?subject=Ayuda%20con%20Aula%20Compás">Enviar correo</a>
-        <div><strong>Correo oficial</strong><small>proyectocompas.info@gmail.com</small></div>
+        <a class="btn btn-primary" href="${whatsappUrl('Hola, necesito ayuda con Aula Compás. Mi nombre es: ___ y mi correo de registro es: ___.') }" target="_blank" rel="noopener">Escribir por WhatsApp</a>
+        <div><strong>WhatsApp Business</strong><small>Proyecto Compás · +52 33 3664 6803</small></div>
         <div><strong>Horario de atención</strong><small>Lunes a viernes · 9:00 a. m. a 6:00 p. m.</small></div>
       </aside>
     </section>`;
