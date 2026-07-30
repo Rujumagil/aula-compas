@@ -117,7 +117,7 @@ using (
       from public.enrollments e
       where e.user_id = auth.uid()
         and e.course_id = resources.course_id
-        and e.status = 'active'
+          and e.status in ('active', 'completed')
     )
   )
   or (
@@ -195,7 +195,7 @@ using (
             from public.enrollments e
             where e.user_id = auth.uid()
               and e.course_id = r.course_id
-              and e.status = 'active'
+          and e.status in ('active', 'completed')
           )
         )
         or (
