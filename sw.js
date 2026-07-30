@@ -1,12 +1,12 @@
-const CACHE = 'aula-compas-v5-4-private-library';
+const CACHE = 'aula-compas-v5-4-1-private-library';
 const STATIC_ASSETS = [
   './',
   './index.html',
   './404.html',
-  './styles.css?v=5.4.0',
-  './app.js?v=5.4.0',
-  './bootstrap.js?v=5.4.0',
-  './supabase-config.js?v=5.4.0',
+  './styles.css?v=5.4.1',
+  './app.js?v=5.4.1',
+  './bootstrap.js?v=5.4.1',
+  './supabase-config.js?v=5.4.1',
   './manifest.json',
   './diagnostico.html',
   './limpiar-cache.html',

@@ -29,6 +29,14 @@ alter table public.profiles
   add constraint profiles_role_check
   check (role in ('student', 'instructor', 'admin'));
 
+-- Acepta libros HTML junto con los tipos de recurso existentes.
+alter table public.resources
+  drop constraint if exists resources_resource_type_check;
+
+alter table public.resources
+  add constraint resources_resource_type_check
+  check (resource_type in ('book', 'pdf', 'audio', 'video', 'template', 'link', 'image'));
+
 create or replace function public.admin_set_user_role(
   target_user uuid,
   new_role text

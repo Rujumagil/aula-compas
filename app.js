@@ -191,7 +191,7 @@ async function init() {
   }
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js?v=5.4.0', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('sw.js?v=5.4.1', { updateViaCache: 'none' })
       .then(registration => registration.update())
       .catch(console.error);
   }
@@ -1364,7 +1364,8 @@ async function createLesson(event) {
 
 async function createResource(event) {
   event.preventDefault();
-  const form = new FormData(event.currentTarget);
+  const formElement = event.currentTarget;
+  const form = new FormData(formElement);
   const file = form.get('file');
   const externalUrl = String(form.get('externalUrl') || '').trim();
   const courseId = String(form.get('courseId') || '').trim();
@@ -1374,8 +1375,9 @@ async function createResource(event) {
     return;
   }
 
-  setFormBusy(event.currentTarget, true);
+  setFormBusy(formElement, true);
   let filePath = null;
+  let resourceCreated = false;
 
   try {
     if (file?.size) {
@@ -1403,19 +1405,20 @@ async function createResource(event) {
       is_public: false
     });
     if (error) throw error;
+    resourceCreated = true;
 
     showToast('Recurso privado guardado.', 'success');
-    event.currentTarget.reset();
+    formElement.reset();
     await loadApplicationData();
     renderAdmin();
   } catch (error) {
     console.error(error);
-    if (filePath) {
+    if (filePath && !resourceCreated) {
       await db.storage.from('digital-products').remove([filePath]).catch(() => {});
     }
     showToast(error.message || 'No se pudo guardar el recurso.', 'error');
   } finally {
-    setFormBusy(event.currentTarget, false);
+    setFormBusy(formElement, false);
   }
 }
 
