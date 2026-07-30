@@ -1,12 +1,12 @@
-const CACHE = 'aula-compas-v6-professional-platform';
+const CACHE = 'aula-compas-v6-0-1-whatsapp';
 const STATIC_ASSETS = [
   './',
   './index.html',
   './404.html',
-  './styles.css?v=6.0.0',
-  './app.js?v=6.0.0',
-  './bootstrap.js?v=6.0.0',
-  './supabase-config.js?v=6.0.0',
+  './styles.css?v=6.0.1',
+  './app.js?v=6.0.1',
+  './bootstrap.js?v=6.0.1',
+  './supabase-config.js?v=6.0.1',
   './manifest.json',
   './diagnostico.html',
   './limpiar-cache.html',
