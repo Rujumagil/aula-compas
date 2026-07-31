@@ -649,3 +649,22 @@ h1,h2,h3{font-family:Georgia,"Times New Roman",serif;font-weight:500}
     font-size:1.32rem;
   }
 }
+
+
+/* FASE 1 - NAVEGACION */
+/* Fase 1 · Navegación del alumno */
+.nav-link-secondary {
+  margin-top: 14px;
+  border: 1px solid rgba(181, 145, 70, 0.35);
+  background: rgba(181, 145, 70, 0.08);
+}
+
+.nav-link-secondary:hover,
+.nav-link-secondary.active {
+  background: rgba(181, 145, 70, 0.15);
+  border-color: rgba(181, 145, 70, 0.55);
+}
+
+.nav-link-secondary .nav-icon {
+  font-weight: 700;
+}

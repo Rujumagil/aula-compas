@@ -48,17 +48,17 @@ const state = {
 };
 
 const navItems = [
-  ['home','⌂','Inicio'],
-  ['courses','▤','Mis cursos'],
-  ['resources','▧','Biblioteca'],
-  ['agenda','◷','Agenda'],
-  ['progress','◎','Progreso'],
-  ['help','?','Ayuda'],
-  ['profile','♡','Perfil']
+  ['home', '⌂', 'Inicio'],
+  ['courses', '▤', 'Mis cursos'],
+  ['resources', '▧', 'Mi biblioteca'],
+  ['agenda', '◷', 'Calendario'],
+  ['certificates', '◇', 'Certificados'],
+  ['help', '?', 'Ayuda'],
+  ['profile', '♡', 'Mi perfil']
 ];
 
 const mobileNavItems = navItems.filter(([id]) =>
-  ['home', 'courses', 'resources', 'agenda', 'progress', 'profile'].includes(id)
+  ['home', 'courses', 'resources', 'agenda', 'certificates', 'profile'].includes(id)
 );
 
 const PUBLIC_PROGRAMS = [
@@ -122,11 +122,11 @@ const ACADEMY_EVENTS = [
 
 const HELP_TOPICS = [
   ['¿Cómo entro a un curso que compré?', 'Crea tu cuenta con el mismo correo utilizado en la compra. Cuando el pago sea validado, el curso aparecerá en “Mis cursos”.'],
-  ['¿Dónde encuentro mi libro digital?', 'Abre “Biblioteca” y selecciona el libro. El sistema genera un acceso privado temporal para proteger tu compra.'],
+  ['¿Dónde encuentro mi libro digital?', 'Abre “Mi biblioteca” y selecciona el libro. El sistema genera un acceso privado temporal para proteger tu compra.'],
   ['¿Cómo recupero mi contraseña?', 'Cierra tu sesión, selecciona “Olvidé mi contraseña” y revisa el enlace enviado a tu correo.'],
   ['Mi pago todavía no aparece', 'Escríbenos por WhatsApp con tu comprobante, nombre y correo de registro para que revisemos tu acceso.'],
   ['¿Puedo usar el aula desde mi celular?', 'Sí. Aula Compás es adaptable y también puedes instalarla desde el botón disponible en tu perfil.'],
-  ['¿Cómo obtengo mi certificado?', 'Completa todas las lecciones del curso. Después podrás abrir e imprimir tu certificado desde la sección de progreso.']
+  ['¿Cómo obtengo mi certificado?', 'Completa todas las lecciones del curso. Después podrás abrir e imprimir tu certificado desde la sección de certificados.']
 ];
 
 window.addEventListener('beforeinstallprompt', event => {
@@ -860,7 +860,8 @@ async function route() {
   renderShell(page);
 
   if (page === 'home') renderHome();
-  else if (page === 'courses') renderCourses();
+  else if (page === 'catalog') renderPublicCatalog(id);
+  else if (page === 'courses') renderCourses();  
   else if (page === 'resources') renderResources();
   else if (page === 'agenda') renderAgenda();
   else if (page === 'progress') renderProgress();
@@ -878,8 +879,10 @@ async function route() {
 
 function renderShell(active) {
   const activeNav = ['course', 'lesson'].includes(active)
-    ? 'courses'
-    : ['certificate', 'certificates'].includes(active) ? 'progress' : active;
+  ? 'courses'
+  : ['certificate', 'certificates'].includes(active)
+    ? 'certificates'
+    : active;
   app.innerHTML = `
     <div class="app-shell">
       <aside class="sidebar">
@@ -888,15 +891,23 @@ function renderShell(active) {
           <span><strong>Aula Compás</strong><span>por Proyecto Compás</span></span>
         </a>
 
-        <span class="sidebar-label">APRENDIZAJE</span>
+        <span class="sidebar-label">MI ESPACIO</span>
         <nav class="sidebar-nav">
           ${navItems.map(([id, icon, label]) => `
             <a class="nav-link ${activeNav === id ? 'active' : ''}" href="#${id}">
-              <span class="nav-icon">${icon}</span>${label}
+              <span class="nav-icon">${icon}</span>
+              ${label}
             </a>`).join('')}
+
+          <a class="nav-link nav-link-secondary ${activeNav === 'catalog' ? 'active' : ''}" href="#catalog">
+            <span class="nav-icon">＋</span>
+            Explorar cursos
+          </a>
+
           ${canManageContent() ? `
             <a class="nav-link admin-nav-link ${activeNav === 'admin' ? 'active' : ''}" href="#admin">
-              <span class="nav-icon">⚙</span>${isAdmin() ? 'Administrar' : 'Mis contenidos'}
+              <span class="nav-icon">⚙</span>
+              ${isAdmin() ? 'Administrar' : 'Mis contenidos'}
             </a>` : ''}
         </nav>
 
@@ -1482,8 +1493,8 @@ function renderAgenda() {
   const now = Date.now();
 
   page.innerHTML = `
-    <span class="eyebrow">Eventos y sesiones</span>
-    <h1 class="page-title">Agenda</h1>
+    <span class="eyebrow">Mi calendario</span>
+    <h1 class="page-title">Calendario</h1>
     <p class="page-subtitle">Consulta lanzamientos, webinars y próximas sesiones de tus programas.</p>
 
     <section class="agenda-layout">
@@ -1703,7 +1714,7 @@ function renderProfile() {
 
   page.innerHTML = `
     <span class="eyebrow">Mi cuenta</span>
-    <h1 class="page-title">Perfil</h1>
+    <h1 class="page-title">Mi perfil</h1>
 
     <section class="profile-grid">
       <article class="profile-card glass">
