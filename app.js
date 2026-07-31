@@ -270,7 +270,7 @@ async function init() {
   }
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js?v=6.0.0', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('sw.js?v=6.0.11', { updateViaCache: 'none' })
       .then(registration => registration.update())
       .catch(console.error);
   }
@@ -911,6 +911,7 @@ async function route() {
   else if (page === 'profile') renderProfile();
   else if (page === 'course') renderCourse(id);
   else if (page === 'lesson') await renderLesson(id, lessonId);
+  else if (page === 'builder' && canManageContent()) await renderBlockBuilder(id, lessonId);
   else if (page === 'admin' && canManageContent()) renderAdmin();
   else renderHome();
 }
@@ -918,9 +919,11 @@ async function route() {
 function renderShell(active) {
   const activeNav = ['course', 'lesson'].includes(active)
   ? 'courses'
-  : ['certificate', 'certificates'].includes(active)
-    ? 'certificates'
-    : active;
+  : active === 'builder'
+    ? 'admin'
+    : ['certificate', 'certificates'].includes(active)
+      ? 'certificates'
+      : active;
   app.innerHTML = `
     <div class="app-shell">
       <aside class="sidebar">
@@ -1349,6 +1352,14 @@ async function renderLesson(courseId, lessonId) {
   if (noteResult.error) console.error(noteResult.error);
   const note = noteResult.data?.note || '';
 
+  const blocksResult = await db
+    .from('lesson_blocks')
+    .select('*')
+    .eq('lesson_id', lesson.id)
+    .order('position', { ascending: true });
+  if (blocksResult.error && blocksResult.error.code !== '42P01') console.error('Blocks error:', blocksResult.error);
+  const lessonBlocks = await hydrateLessonBlockMedia(blocksResult.data || []);
+
   page.innerHTML = `
     <a class="back-link" href="#course/${course.id}">← Volver al contenido</a>
     <span class="eyebrow">${escapeHtml(course.title)}</span>
@@ -1372,6 +1383,7 @@ async function renderLesson(courseId, lessonId) {
           `}
         </div>
 
+        ${lessonBlocks.length ? `<section class="student-block-stream">${lessonBlocks.map(renderStudentBlock).join('')}</section>` : ''}
         ${lesson.content_html ? `<article class="lesson-content glass">${sanitizeLessonHtml(lesson.content_html)}</article>` : ''}
 
         <div class="lesson-actions">
@@ -1413,6 +1425,13 @@ async function renderLesson(courseId, lessonId) {
     clearTimeout(notesTimer);
     notesTimer = setTimeout(() => saveNote(lesson.id, event.target.value), 700);
   });
+
+  document.querySelectorAll('[data-save-activity]').forEach(button => button.addEventListener('click', async () => {
+    const blockId = button.dataset.saveActivity;
+    const answer = document.querySelector(`[data-activity-block="${blockId}"]`)?.value || '';
+    const { error } = await db.from('block_responses').upsert({ user_id: state.user.id, block_id: blockId, response: { text: answer }, updated_at: new Date().toISOString() }, { onConflict: 'user_id,block_id' });
+    showToast(error ? 'No se pudo guardar la respuesta.' : 'Respuesta guardada.', error ? 'error' : 'success');
+  }));
 }
 
 async function completeLesson(lessonId, completed) {
@@ -2705,7 +2724,8 @@ function renderAdmin() {
                 ${isAdmin() ? `<span><strong>${enrollmentCount}</strong> alumnos</span>` : ''}
               </div>
               <div class="instructor-course-actions">
-                <button class="btn btn-primary" type="button" data-admin-scroll="admin-content" data-select-course="${escapeHtml(course.id)}">Administrar contenido</button>
+                <a class="btn btn-primary" href="#builder/${escapeHtml(course.id)}">Editor por bloques</a>
+                <button class="btn btn-secondary" type="button" data-admin-scroll="admin-content" data-select-course="${escapeHtml(course.id)}">Estructura rápida</button>
                 ${isAdmin() ? `<button class="btn btn-secondary" type="button" data-admin-scroll="admin-users">Ver alumnos</button>` : ''}
                 <button class="btn btn-secondary" type="button" data-course-status="${escapeHtml(course.id)}" data-next-status="${isPublished ? 'draft' : 'published'}">${isPublished ? 'Pasar a borrador' : 'Publicar'}</button>
                 ${course.cover_path ? `<button class="btn btn-secondary" type="button" data-remove-course-cover="${escapeHtml(course.id)}">Quitar portada</button>` : ''}
@@ -3410,6 +3430,368 @@ async function assignCourse(event) {
   showToast('Curso asignado.', 'success');
   await loadApplicationData();
   renderAdmin();
+}
+
+
+
+function safeMediaUrl(value = '') {
+  const raw = String(value || '').trim();
+  return /^(https?:|blob:|data:)/i.test(raw) ? raw : '';
+}
+
+
+const LESSON_MEDIA_BUCKET = 'lesson-media';
+const LESSON_MEDIA_LIMITS = {
+  image: 8 * 1024 * 1024,
+  pdf: 25 * 1024 * 1024,
+  audio: 80 * 1024 * 1024,
+  video: 250 * 1024 * 1024
+};
+
+function lessonMediaKind(blockType) {
+  return ({ image: 'image', pdf: 'pdf', audio: 'audio', video: 'video' })[blockType] || null;
+}
+
+function lessonMediaAccept(blockType) {
+  return ({
+    image: 'image/jpeg,image/png,image/webp',
+    pdf: 'application/pdf',
+    audio: 'audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,audio/webm',
+    video: 'video/mp4,video/webm,video/quicktime'
+  })[blockType] || '';
+}
+
+function formatFileSize(bytes = 0) {
+  if (!Number(bytes)) return '';
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(bytes > 10 * 1024 * 1024 ? 0 : 1)} MB`;
+}
+
+function safeFileName(name = 'archivo') {
+  return String(name)
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'archivo';
+}
+
+async function compressLessonImage(file) {
+  const image = await createImageBitmap(file);
+  const maxSide = 1920;
+  const ratio = Math.min(1, maxSide / Math.max(image.width, image.height));
+  const width = Math.max(1, Math.round(image.width * ratio));
+  const height = Math.max(1, Math.round(image.height * ratio));
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d', { alpha: false });
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, width, height);
+  ctx.drawImage(image, 0, 0, width, height);
+  image.close?.();
+  const blob = await new Promise((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error('No se pudo procesar la imagen.')), 'image/webp', .86));
+  return new File([blob], `${safeFileName(file.name).replace(/\.[^.]+$/, '')}.webp`, { type: 'image/webp' });
+}
+
+function validateLessonMediaFile(file, blockType) {
+  const kind = lessonMediaKind(blockType);
+  if (!kind) throw new Error('Este bloque no admite archivos.');
+  const accepted = lessonMediaAccept(blockType).split(',');
+  if (!accepted.includes(file.type)) throw new Error(`Formato no permitido para ${kind}.`);
+  if (file.size > LESSON_MEDIA_LIMITS[kind]) throw new Error(`El archivo supera el límite de ${formatFileSize(LESSON_MEDIA_LIMITS[kind])}.`);
+}
+
+async function signedLessonMediaUrl(path) {
+  if (!path) return '';
+  const { data, error } = await db.storage.from(LESSON_MEDIA_BUCKET).createSignedUrl(path, 3600);
+  if (error) {
+    console.error('Signed lesson media URL error:', error);
+    return '';
+  }
+  return data?.signedUrl || '';
+}
+
+async function hydrateLessonBlockMedia(blocks = []) {
+  return Promise.all(blocks.map(async block => {
+    const content = { ...(block.content || {}) };
+    if (content.file_path) content.resolved_url = await signedLessonMediaUrl(content.file_path);
+    return { ...block, content };
+  }));
+}
+
+function builderMediaUploadMarkup(block, data) {
+  const kind = lessonMediaKind(block.block_type);
+  if (!kind) return '';
+  const hasFile = Boolean(data.file_path);
+  return `<section class="builder-media-upload" data-media-uploader>
+    <div class="builder-media-preview">
+      ${block.block_type === 'image' && data.resolved_url ? `<img src="${escapeHtml(data.resolved_url)}" alt="">` : ''}
+      ${block.block_type === 'video' && data.resolved_url ? `<video controls preload="metadata" src="${escapeHtml(data.resolved_url)}"></video>` : ''}
+      ${block.block_type === 'audio' && data.resolved_url ? `<audio controls preload="metadata" src="${escapeHtml(data.resolved_url)}"></audio>` : ''}
+      ${block.block_type === 'pdf' && data.resolved_url ? `<a href="${escapeHtml(data.resolved_url)}" target="_blank" rel="noopener">Vista previa del PDF ↗</a>` : ''}
+    </div>
+    <div class="builder-media-file-row">
+      <label class="builder-upload-button">
+        <input type="file" data-block-upload accept="${lessonMediaAccept(block.block_type)}">
+        <span>${hasFile ? 'Reemplazar archivo' : 'Subir archivo'}</span>
+      </label>
+      ${hasFile ? `<button class="builder-remove-media" data-remove-block-media type="button">Quitar archivo</button>` : ''}
+    </div>
+    <div class="builder-upload-details">
+      <span>${hasFile ? `${escapeHtml(data.file_name || 'Archivo')} · ${escapeHtml(formatFileSize(data.file_size))}` : `Máximo ${formatFileSize(LESSON_MEDIA_LIMITS[kind])}`}</span>
+      <span data-upload-progress></span>
+    </div>
+  </section>`;
+}
+
+function renderStudentBlock(block) {
+  const data = block.content || {};
+  const type = block.block_type;
+  const url = safeMediaUrl(data.resolved_url || data.url);
+  if (type === 'text') return `<article class="student-content-block text-block">${sanitizeLessonHtml(data.html || data.text || '')}</article>`;
+  if (type === 'video') {
+    if (!url) return '';
+    if (data.file_path || /^video\//i.test(data.mime_type || '')) return `<article class="student-content-block media-block"><video controls playsinline preload="metadata" src="${escapeHtml(url)}"></video></article>`;
+    return `<article class="student-content-block media-block"><iframe src="${escapeHtml(url)}" title="Video de la lección" allowfullscreen loading="lazy"></iframe></article>`;
+  }
+  if (type === 'image') return url ? `<figure class="student-content-block image-block"><img src="${escapeHtml(url)}" alt="${escapeHtml(data.alt || '')}">${data.caption ? `<figcaption>${escapeHtml(data.caption)}</figcaption>` : ''}</figure>` : '';
+  if (type === 'pdf') return url ? `<article class="student-content-block file-block"><div><span>PDF</span><strong>${escapeHtml(data.title || data.file_name || 'Material de lectura')}</strong><small>${escapeHtml(formatFileSize(data.file_size))}</small></div><a class="btn btn-secondary" href="${escapeHtml(url)}" target="_blank" rel="noopener">Abrir documento</a></article>` : '';
+  if (type === 'audio') return url ? `<article class="student-content-block audio-block"><strong>${escapeHtml(data.title || data.file_name || 'Audio')}</strong><audio controls preload="metadata" src="${escapeHtml(url)}"></audio></article>` : '';
+  if (type === 'activity') return `<article class="student-content-block activity-block"><span class="eyebrow">Actividad</span><h3>${escapeHtml(data.title || 'Reflexiona y escribe')}</h3><p>${escapeHtml(data.prompt || '')}</p><textarea data-activity-block="${escapeHtml(block.id)}" placeholder="Escribe tu respuesta..."></textarea><button class="btn btn-secondary" type="button" data-save-activity="${escapeHtml(block.id)}">Guardar respuesta</button></article>`;
+  if (type === 'divider') return '<hr class="student-block-divider">';
+  return '';
+}
+
+const BLOCK_LIBRARY = [
+  ['text', '¶', 'Texto', 'Explicaciones, instrucciones y contenido editorial'],
+  ['video', '▶', 'Video', 'YouTube, Vimeo o enlace incrustable'],
+  ['image', '▧', 'Imagen', 'Fotografía, ilustración o infografía'],
+  ['pdf', 'PDF', 'Documento', 'Manual, guía o material complementario'],
+  ['audio', '♫', 'Audio', 'Meditación, podcast o ejercicio'],
+  ['activity', '✎', 'Actividad', 'Pregunta de reflexión para el alumno'],
+  ['divider', '—', 'Separador', 'Organiza visualmente el contenido']
+];
+
+function defaultBlockContent(type) {
+  if (type === 'text') return { html: '<h2>Nuevo bloque de texto</h2><p>Escribe aquí el contenido de la lección.</p>' };
+  if (type === 'video') return { url: '', title: '' };
+  if (type === 'image') return { url: '', alt: '', caption: '' };
+  if (type === 'pdf') return { url: '', title: 'Material de lectura' };
+  if (type === 'audio') return { url: '', title: 'Audio de la lección' };
+  if (type === 'activity') return { title: 'Actividad de reflexión', prompt: '¿Qué aprendizaje te llevas de esta lección?' };
+  return {};
+}
+
+function builderBlockEditor(block, index) {
+  const data = block.content || {};
+  const label = BLOCK_LIBRARY.find(item => item[0] === block.block_type)?.[2] || block.block_type;
+  let fields = '';
+  if (block.block_type === 'text') fields = `<label>Contenido HTML básico<textarea data-block-field="html" rows="8">${escapeHtml(data.html || '')}</textarea></label>`;
+  if (block.block_type === 'video') fields = `${builderMediaUploadMarkup(block, data)}<label>O utiliza una URL incrustable<input data-block-field="url" type="url" value="${escapeHtml(data.url || '')}" placeholder="https://www.youtube.com/embed/..."></label>`;
+  if (block.block_type === 'image') fields = `${builderMediaUploadMarkup(block, data)}<label>O utiliza una URL de imagen<input data-block-field="url" type="url" value="${escapeHtml(data.url || '')}"></label><div class="builder-two"><label>Texto alternativo<input data-block-field="alt" value="${escapeHtml(data.alt || '')}"></label><label>Pie de imagen<input data-block-field="caption" value="${escapeHtml(data.caption || '')}"></label></div>`;
+  if (block.block_type === 'pdf') fields = `${builderMediaUploadMarkup(block, data)}<label>Título<input data-block-field="title" value="${escapeHtml(data.title || '')}"></label><label>O utiliza una URL del PDF<input data-block-field="url" type="url" value="${escapeHtml(data.url || '')}"></label>`;
+  if (block.block_type === 'audio') fields = `${builderMediaUploadMarkup(block, data)}<label>Título<input data-block-field="title" value="${escapeHtml(data.title || '')}"></label><label>O utiliza una URL del audio<input data-block-field="url" type="url" value="${escapeHtml(data.url || '')}"></label>`;
+  if (block.block_type === 'activity') fields = `<label>Título<input data-block-field="title" value="${escapeHtml(data.title || '')}"></label><label>Instrucción<textarea data-block-field="prompt" rows="4">${escapeHtml(data.prompt || '')}</textarea></label>`;
+  if (block.block_type === 'divider') fields = '<p class="builder-divider-note">Este bloque agrega una separación visual en la lección.</p>';
+  return `<article class="builder-block" draggable="true" data-builder-block="${escapeHtml(block.id)}" data-index="${index}">
+    <header><span class="builder-drag">⋮⋮</span><div><small>Bloque ${index + 1}</small><strong>${escapeHtml(label)}</strong></div><div class="builder-block-actions"><button type="button" data-move-block="up" title="Subir">↑</button><button type="button" data-move-block="down" title="Bajar">↓</button><button type="button" data-delete-block title="Eliminar">×</button></div></header>
+    <div class="builder-block-fields">${fields}</div>
+    <div class="builder-save-state" data-block-state>Guardado</div>
+  </article>`;
+}
+
+async function renderBlockBuilder(courseId, selectedLessonId = '') {
+  const course = findCourse(courseId);
+  const page = document.querySelector('#page');
+  if (!course) { renderAdmin(); return; }
+  const lessons = allLessons(course);
+  const selectedLesson = lessons.find(item => item.id === selectedLessonId) || lessons[0] || null;
+  if (!selectedLesson) {
+    page.innerHTML = `<a class="back-link" href="#admin">← Volver al panel</a><section class="empty-state glass"><h2>Este curso todavía no tiene lecciones</h2><p>Crea al menos un módulo y una lección para abrir el editor por bloques.</p><a class="btn btn-primary" href="#admin">Crear contenido</a></section>`;
+    return;
+  }
+  const { data: rawBlocks, error } = await db.from('lesson_blocks').select('*').eq('lesson_id', selectedLesson.id).order('position');
+  const blocks = error ? [] : await hydrateLessonBlockMedia(rawBlocks || []);
+  if (error) {
+    page.innerHTML = `<section class="empty-state glass"><h2>Falta activar el editor por bloques</h2><p>Ejecuta el archivo 09-editor-profesional-por-bloques.sql en Supabase.</p><a class="btn btn-secondary" href="#admin">Volver</a></section>`;
+    return;
+  }
+  const { data: versions } = await db.from('course_versions').select('id,version_number,label,created_at').eq('course_id', course.id).order('version_number', { ascending: false }).limit(8);
+  page.innerHTML = `
+    <section class="builder-shell">
+      <header class="builder-topbar">
+        <div><a class="back-link" href="#admin">← Panel del instructor</a><span class="eyebrow">Editor profesional</span><h1>${escapeHtml(course.title)}</h1><p data-builder-status>Todos los cambios están guardados</p></div>
+        <div class="builder-top-actions"><a class="btn btn-secondary" href="#lesson/${course.id}/${selectedLesson.id}" target="_blank">Vista alumno</a><button class="btn btn-secondary" id="save-course-version" type="button">Guardar versión</button><button class="btn btn-primary" id="publish-from-builder" type="button">${course.status === 'published' ? 'Guardar publicado' : 'Publicar curso'}</button></div>
+      </header>
+      <div class="builder-layout">
+        <aside class="builder-outline glass">
+          <div class="builder-outline-heading"><span>ESTRUCTURA</span><strong>${course.modules.length} módulos</strong></div>
+          ${course.modules.map((module, mi) => `<section><h3><span>${mi+1}</span>${escapeHtml(module.title)}</h3>${module.lessons.map(lesson => `<a class="${lesson.id===selectedLesson.id?'active':''}" href="#builder/${course.id}/${lesson.id}"><span>▤</span>${escapeHtml(lesson.title)}</a>`).join('')}</section>`).join('')}
+          <a class="builder-outline-footer" href="#admin">＋ Administrar módulos y lecciones</a>
+        </aside>
+        <main class="builder-canvas">
+          <div class="builder-lesson-heading glass"><div><span class="eyebrow">Lección seleccionada</span><h2>${escapeHtml(selectedLesson.title)}</h2></div><span>${(blocks||[]).length} bloques</span></div>
+          <div class="builder-block-list" id="builder-block-list">${(blocks||[]).length ? blocks.map(builderBlockEditor).join('') : '<div class="builder-empty"><span>＋</span><h3>Comienza a construir esta lección</h3><p>Agrega texto, video, materiales y actividades desde el panel derecho.</p></div>'}</div>
+        </main>
+        <aside class="builder-library glass">
+          <div><span class="eyebrow">Agregar contenido</span><h2>Bloques</h2><p>Selecciona un elemento para añadirlo al final de la lección.</p></div>
+          <div class="builder-library-grid">${BLOCK_LIBRARY.map(([type,icon,label,desc]) => `<button type="button" data-add-block="${type}"><span>${icon}</span><strong>${label}</strong><small>${desc}</small></button>`).join('')}</div>
+          <div class="builder-versions"><div><span class="eyebrow">Historial</span><h3>Versiones guardadas</h3></div>${(versions||[]).length ? versions.map(v => `<button type="button" data-restore-version="${v.id}"><strong>Versión ${v.version_number}</strong><small>${escapeHtml(v.label || new Date(v.created_at).toLocaleString('es-MX'))}</small></button>`).join('') : '<p>Aún no hay versiones manuales.</p>'}</div>
+        </aside>
+      </div>
+    </section>`;
+  bindBlockBuilder(course, selectedLesson, blocks || []);
+}
+
+function collectBlockContent(blockElement, existing = {}) {
+  const content = { ...existing };
+  delete content.resolved_url;
+  blockElement.querySelectorAll('[data-block-field]').forEach(field => { content[field.dataset.blockField] = field.value; });
+  return content;
+}
+
+function bindBlockBuilder(course, lesson, initialBlocks) {
+  let blocks = [...initialBlocks];
+  let saveTimers = new Map();
+  const status = document.querySelector('[data-builder-status]');
+  const setStatus = text => { if (status) status.textContent = text; };
+
+  async function refreshBuilder() { await loadApplicationData(); await renderBlockBuilder(course.id, lesson.id); }
+
+  document.querySelectorAll('[data-add-block]').forEach(button => button.addEventListener('click', async () => {
+    setStatus('Agregando bloque…');
+    const { error } = await db.from('lesson_blocks').insert({ lesson_id: lesson.id, block_type: button.dataset.addBlock, position: blocks.length + 1, content: defaultBlockContent(button.dataset.addBlock), created_by: state.user.id });
+    if (error) return showToast(error.message, 'error');
+    showToast('Bloque agregado.', 'success');
+    await refreshBuilder();
+  }));
+
+  document.querySelectorAll('[data-builder-block]').forEach(element => {
+    const id = element.dataset.builderBlock;
+    element.querySelectorAll('[data-block-field]').forEach(field => field.addEventListener('input', () => {
+      setStatus('Guardando cambios…');
+      element.querySelector('[data-block-state]').textContent = 'Guardando…';
+      clearTimeout(saveTimers.get(id));
+      saveTimers.set(id, setTimeout(async () => {
+        const currentBlock = blocks.find(item => item.id === id);
+        const { error } = await db.from('lesson_blocks').update({ content: collectBlockContent(element, currentBlock?.content || {}), updated_at: new Date().toISOString() }).eq('id', id);
+        element.querySelector('[data-block-state]').textContent = error ? 'Error al guardar' : 'Guardado';
+        setStatus(error ? 'Hay cambios sin guardar' : 'Todos los cambios están guardados');
+      }, 900));
+    }));
+    element.querySelector('[data-block-upload]')?.addEventListener('change', async event => {
+      const input = event.currentTarget;
+      const file = input.files?.[0];
+      if (!file) return;
+      const currentBlock = blocks.find(item => item.id === id);
+      if (!currentBlock) return;
+      const progress = element.querySelector('[data-upload-progress]');
+      try {
+        validateLessonMediaFile(file, currentBlock.block_type);
+        setStatus('Preparando archivo…');
+        if (progress) progress.textContent = 'Procesando 20%';
+        const prepared = currentBlock.block_type === 'image' ? await compressLessonImage(file) : file;
+        const extension = prepared.name.includes('.') ? prepared.name.split('.').pop().toLowerCase() : 'bin';
+        const path = `courses/${course.id}/lessons/${lesson.id}/blocks/${id}/${Date.now()}.${extension}`;
+        if (progress) progress.textContent = 'Subiendo 55%';
+        const { error: uploadError } = await db.storage.from(LESSON_MEDIA_BUCKET).upload(path, prepared, { contentType: prepared.type || 'application/octet-stream', upsert: false });
+        if (uploadError) throw uploadError;
+        if (progress) progress.textContent = 'Guardando 85%';
+        const previousPath = currentBlock.content?.file_path;
+        const nextContent = {
+          ...(currentBlock.content || {}),
+          file_path: path,
+          file_name: prepared.name,
+          file_size: prepared.size,
+          mime_type: prepared.type,
+          url: ''
+        };
+        delete nextContent.resolved_url;
+        const { error: updateError } = await db.from('lesson_blocks').update({ content: nextContent, updated_at: new Date().toISOString() }).eq('id', id);
+        if (updateError) {
+          await db.storage.from(LESSON_MEDIA_BUCKET).remove([path]);
+          throw updateError;
+        }
+        if (previousPath && previousPath !== path) await db.storage.from(LESSON_MEDIA_BUCKET).remove([previousPath]);
+        if (progress) progress.textContent = 'Completado 100%';
+        showToast('Archivo integrado a la lección.', 'success');
+        await refreshBuilder();
+      } catch (error) {
+        console.error(error);
+        if (progress) progress.textContent = 'Error';
+        showToast(error.message || 'No se pudo subir el archivo.', 'error');
+        input.value = '';
+        setStatus('No se pudo guardar el archivo');
+      }
+    });
+
+    element.querySelector('[data-remove-block-media]')?.addEventListener('click', async () => {
+      const currentBlock = blocks.find(item => item.id === id);
+      const path = currentBlock?.content?.file_path;
+      if (!path || !confirm('¿Quitar el archivo de este bloque?')) return;
+      const nextContent = { ...(currentBlock.content || {}) };
+      delete nextContent.file_path;
+      delete nextContent.file_name;
+      delete nextContent.file_size;
+      delete nextContent.mime_type;
+      delete nextContent.resolved_url;
+      const { error } = await db.from('lesson_blocks').update({ content: nextContent, updated_at: new Date().toISOString() }).eq('id', id);
+      if (error) return showToast(error.message, 'error');
+      await db.storage.from(LESSON_MEDIA_BUCKET).remove([path]);
+      showToast('Archivo retirado del bloque.', 'success');
+      await refreshBuilder();
+    });
+
+    element.querySelector('[data-delete-block]')?.addEventListener('click', async () => {
+      if (!confirm('¿Eliminar este bloque?')) return;
+      const currentBlock = blocks.find(item => item.id === id);
+      const { error } = await db.from('lesson_blocks').delete().eq('id', id);
+      if (error) return showToast(error.message, 'error');
+      if (currentBlock?.content?.file_path) await db.storage.from(LESSON_MEDIA_BUCKET).remove([currentBlock.content.file_path]);
+      await refreshBuilder();
+    });
+    element.querySelectorAll('[data-move-block]').forEach(button => button.addEventListener('click', async () => {
+      const index = blocks.findIndex(item => item.id === id);
+      const target = button.dataset.moveBlock === 'up' ? index - 1 : index + 1;
+      if (target < 0 || target >= blocks.length) return;
+      const current = blocks[index], other = blocks[target];
+      await Promise.all([db.from('lesson_blocks').update({ position: other.position }).eq('id', current.id), db.from('lesson_blocks').update({ position: current.position }).eq('id', other.id)]);
+      await refreshBuilder();
+    }));
+  });
+
+  document.querySelector('#publish-from-builder')?.addEventListener('click', async () => {
+    const { error } = await db.from('courses').update({ status: 'published' }).eq('id', course.id);
+    if (error) return showToast(error.message, 'error');
+    showToast('Curso publicado.', 'success');
+    await refreshBuilder();
+  });
+
+  document.querySelector('#save-course-version')?.addEventListener('click', async () => {
+    setStatus('Creando versión…');
+    const snapshot = { course: { id: course.id, title: course.title, status: course.status }, modules: course.modules, lesson_id: lesson.id, blocks };
+    const { data: latest } = await db.from('course_versions').select('version_number').eq('course_id', course.id).order('version_number', { ascending: false }).limit(1).maybeSingle();
+    const number = (latest?.version_number || 0) + 1;
+    const { error } = await db.from('course_versions').insert({ course_id: course.id, version_number: number, label: `Versión manual ${number}`, snapshot, created_by: state.user.id });
+    if (error) return showToast(error.message, 'error');
+    showToast(`Versión ${number} guardada.`, 'success');
+    await refreshBuilder();
+  });
+
+  document.querySelectorAll('[data-restore-version]').forEach(button => button.addEventListener('click', async () => {
+    if (!confirm('¿Restaurar los bloques guardados en esta versión? Los bloques actuales de esta lección serán reemplazados.')) return;
+    const { data: version, error } = await db.from('course_versions').select('snapshot').eq('id', button.dataset.restoreVersion).single();
+    if (error) return showToast(error.message, 'error');
+    const snapshotBlocks = version.snapshot?.blocks || [];
+    await db.from('lesson_blocks').delete().eq('lesson_id', lesson.id);
+    if (snapshotBlocks.length) {
+      const rows = snapshotBlocks.map((item, index) => ({ lesson_id: lesson.id, block_type: item.block_type, position: index + 1, content: item.content || {}, created_by: state.user.id }));
+      const { error: insertError } = await db.from('lesson_blocks').insert(rows);
+      if (insertError) return showToast(insertError.message, 'error');
+    }
+    showToast('Versión restaurada.', 'success');
+    await refreshBuilder();
+  }));
 }
 
 window.addEventListener('hashchange', route);
