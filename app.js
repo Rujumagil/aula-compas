@@ -1476,23 +1476,46 @@ function resourceTypeLabel(type) {
   })[type] || 'Recurso';
 }
 
+function libraryResourceGroup(resource) {
+  return resource.resource_type === 'book' ? 'book' : 'material';
+}
+
 function resourceCardMarkup(resource) {
   const course = state.courses.find(item => item.id === resource.course_id);
   const isBook = resource.resource_type === 'book';
-  return `
-    <article class="resource-card glass" data-resource-type="${escapeHtml(isBook ? 'book' : 'material')}">
-      <div class="resource-media">
-        <img src="${escapeHtml(normalizeMediaUrl(resource.thumbnail_url, isBook ? 'curso-compas.webp' : 'recurso-manual.webp'))}" alt="${escapeHtml(resource.title)}" onerror="imageErrorFallback(event, '${isBook ? 'curso-compas.webp' : 'recurso-manual.webp'}')">
-        <span class="status-pill available">Disponible</span>
-      </div>
-      <div class="resource-body">
-        <span class="eyebrow">${escapeHtml(resourceTypeLabel(resource.resource_type))}</span>
-        <h3>${escapeHtml(resource.title)}</h3>
-        <p>${course ? escapeHtml(course.title) : 'Recurso general de Aula Compás'}</p>
-        <div class="resource-card-footer">
-          <small>${isBook ? 'Acceso privado temporal' : 'Material incluido en tu acceso'}</small>
-          <button class="btn btn-primary" data-resource-id="${escapeHtml(resource.id)}">${isBook ? 'Leer ahora' : 'Abrir recurso'}</button>
+  const fallback = isBook ? 'curso-compas.webp' : 'recurso-manual.webp';
+  const subtitle = course ? course.title : 'Recurso general de Aula Compás';
+
+  if (isBook) {
+    return `
+      <article class="library-book-card" data-resource-type="book" data-resource-title="${escapeHtml(`${resource.title} ${subtitle}`.toLowerCase())}">
+        <button class="library-book-cover" type="button" data-resource-id="${escapeHtml(resource.id)}" aria-label="Abrir ${escapeHtml(resource.title)}">
+          <img src="${escapeHtml(normalizeMediaUrl(resource.thumbnail_url, fallback))}" alt="Portada de ${escapeHtml(resource.title)}" onerror="imageErrorFallback(event, '${fallback}')">
+          <span class="library-access-badge">En tu biblioteca</span>
+          <span class="library-book-overlay">Leer ahora</span>
+        </button>
+        <div class="library-book-info">
+          <span class="eyebrow">${escapeHtml(resourceTypeLabel(resource.resource_type))}</span>
+          <h3>${escapeHtml(resource.title)}</h3>
+          <p>${escapeHtml(subtitle)}</p>
+          <button class="library-text-action" type="button" data-resource-id="${escapeHtml(resource.id)}">Abrir libro <span>→</span></button>
         </div>
+      </article>`;
+  }
+
+  return `
+    <article class="library-material-card glass" data-resource-type="material" data-resource-title="${escapeHtml(`${resource.title} ${subtitle} ${resourceTypeLabel(resource.resource_type)}`.toLowerCase())}">
+      <div class="library-material-thumb">
+        <img src="${escapeHtml(normalizeMediaUrl(resource.thumbnail_url, fallback))}" alt="${escapeHtml(resource.title)}" onerror="imageErrorFallback(event, '${fallback}')">
+        <span>${escapeHtml(resourceTypeLabel(resource.resource_type))}</span>
+      </div>
+      <div class="library-material-body">
+        <div>
+          <span class="eyebrow">Material de apoyo</span>
+          <h3>${escapeHtml(resource.title)}</h3>
+          <p>${escapeHtml(subtitle)}</p>
+        </div>
+        <button class="btn btn-secondary" type="button" data-resource-id="${escapeHtml(resource.id)}">Abrir recurso</button>
       </div>
     </article>`;
 }
@@ -1507,51 +1530,129 @@ function renderResources() {
   const page = document.querySelector('#page');
   const books = state.resources.filter(resource => resource.resource_type === 'book');
   const materials = state.resources.filter(resource => resource.resource_type !== 'book');
+  const featuredBook = books[0] || null;
 
   page.innerHTML = `
-    <section class="library-heading">
-      <div><span class="eyebrow">Tu espacio de lectura</span><h1 class="page-title">Mi biblioteca</h1><p class="page-subtitle">Libros, manuales y materiales disponibles exclusivamente para tu cuenta.</p></div>
-      <div class="library-count"><strong>${books.length}</strong><span>${books.length === 1 ? 'libro disponible' : 'libros disponibles'}</span></div>
+    <section class="library-page-heading">
+      <div>
+        <span class="eyebrow">Colección personal</span>
+        <h1 class="page-title">Mi biblioteca</h1>
+        <p class="page-subtitle">Encuentra los libros y materiales vinculados a tus cursos. Tu acceso es privado y exclusivo para tu cuenta.</p>
+      </div>
+      <div class="library-summary" aria-label="Resumen de biblioteca">
+        <article><strong>${books.length}</strong><span>${books.length === 1 ? 'Libro' : 'Libros'}</span></article>
+        <article><strong>${materials.length}</strong><span>${materials.length === 1 ? 'Material' : 'Materiales'}</span></article>
+      </div>
     </section>
 
-    <div class="filters">
-      <button class="filter-button active" data-resource-filter="all">Todo</button>
-      <button class="filter-button" data-resource-filter="book">Libros</button>
-      <button class="filter-button" data-resource-filter="material">Materiales</button>
-    </div>
+    <section class="library-toolbar glass">
+      <label class="library-search">
+        <span>⌕</span>
+        <input id="library-search" type="search" placeholder="Buscar en mi biblioteca" autocomplete="off">
+      </label>
+      <div class="library-filter-tabs" role="group" aria-label="Filtrar biblioteca">
+        <button class="library-filter active" type="button" data-resource-filter="all">Todo</button>
+        <button class="library-filter" type="button" data-resource-filter="book">Libros</button>
+        <button class="library-filter" type="button" data-resource-filter="material">Materiales</button>
+      </div>
+    </section>
 
-    ${books.length ? `
-      <section class="featured-book glass">
-        <img src="${escapeHtml(normalizeMediaUrl(books[0].thumbnail_url, 'curso-compas.webp'))}" alt="${escapeHtml(books[0].title)}" onerror="imageErrorFallback(event)">
-        <div>
+    ${featuredBook ? `
+      <section class="library-featured-book">
+        <div class="library-featured-cover">
+          <img src="${escapeHtml(normalizeMediaUrl(featuredBook.thumbnail_url, 'curso-compas.webp'))}" alt="Portada de ${escapeHtml(featuredBook.title)}" onerror="imageErrorFallback(event, 'curso-compas.webp')">
+        </div>
+        <div class="library-featured-content">
           <span class="eyebrow">Lectura destacada</span>
-          <h2>${escapeHtml(books[0].title)}</h2>
-          <p>Continúa tu lectura desde cualquier dispositivo. El acceso se genera de manera privada para proteger tu compra.</p>
-          <button class="btn btn-primary" data-resource-id="${escapeHtml(books[0].id)}">Abrir libro digital</button>
+          <h2>${escapeHtml(featuredBook.title)}</h2>
+          <p>Este libro forma parte de tu colección. Puedes abrirlo desde cualquier dispositivo mientras tu sesión esté activa.</p>
+          <div class="library-featured-actions">
+            <button class="btn btn-primary" type="button" data-resource-id="${escapeHtml(featuredBook.id)}">Leer ahora</button>
+            <a class="btn btn-secondary" href="#help">Ayuda con mi acceso</a>
+          </div>
+          <small>El enlace de lectura es temporal para proteger tu contenido.</small>
         </div>
       </section>` : ''}
 
-    <div class="section-heading"><div><span class="eyebrow">Colección personal</span><h2>Todos tus recursos</h2></div></div>
-    <section class="resources-grid" id="resource-grid">
-      ${state.resources.length ? state.resources.map(resourceCardMarkup).join('') : `
-        <section class="empty-state glass"><h2>Todavía no hay recursos disponibles.</h2><p>Los libros y materiales aparecerán aquí cuando sean asignados a tu cuenta.</p></section>`}
+    <section class="library-content" id="library-content">
+      ${books.length ? `
+        <div class="library-section" data-library-section="book">
+          <div class="section-heading library-section-heading">
+            <div><span class="eyebrow">Tu estantería</span><h2>Libros digitales</h2></div>
+            <span>${books.length} ${books.length === 1 ? 'título' : 'títulos'}</span>
+          </div>
+          <div class="library-books-grid">
+            ${books.map(resourceCardMarkup).join('')}
+          </div>
+        </div>` : ''}
+
+      ${materials.length ? `
+        <div class="library-section" data-library-section="material">
+          <div class="section-heading library-section-heading">
+            <div><span class="eyebrow">Para seguir aprendiendo</span><h2>Materiales de apoyo</h2></div>
+            <span>${materials.length} ${materials.length === 1 ? 'recurso' : 'recursos'}</span>
+          </div>
+          <div class="library-materials-grid">
+            ${materials.map(resourceCardMarkup).join('')}
+          </div>
+        </div>` : ''}
+
+      ${state.resources.length ? '' : `
+        <section class="library-empty-state glass">
+          <div class="library-empty-icon">▧</div>
+          <span class="eyebrow">Tu colección está lista para crecer</span>
+          <h2>Tu biblioteca aún está vacía</h2>
+          <p>Los libros, manuales y recursos aparecerán aquí cuando sean asignados a tu cuenta.</p>
+          <a class="btn btn-primary" href="#catalog">Explorar cursos</a>
+        </section>`}
+
+      <section class="library-no-results hide" id="library-no-results">
+        <div class="library-empty-icon">⌕</div>
+        <h2>No encontramos coincidencias</h2>
+        <p>Prueba con otro título, curso o tipo de recurso.</p>
+      </section>
     </section>
 
     <section class="library-security-note">
-      <span>⌾</span><div><strong>Tu biblioteca está protegida</strong><p>Los archivos privados utilizan enlaces temporales y solo se abren para cuentas autorizadas.</p></div>
+      <span>⌾</span>
+      <div><strong>Biblioteca protegida</strong><p>Los archivos privados utilizan enlaces temporales y solo se abren para cuentas autorizadas.</p></div>
     </section>`;
 
   bindResourceButtons();
-  document.querySelectorAll('[data-resource-filter]').forEach(button => {
+
+  const searchInput = document.querySelector('#library-search');
+  const filterButtons = [...document.querySelectorAll('[data-resource-filter]')];
+  let currentFilter = 'all';
+
+  const applyLibraryFilters = () => {
+    const query = (searchInput?.value || '').trim().toLowerCase();
+    let visibleCards = 0;
+
+    document.querySelectorAll('[data-resource-title]').forEach(card => {
+      const typeMatches = currentFilter === 'all' || card.dataset.resourceType === currentFilter;
+      const textMatches = !query || card.dataset.resourceTitle.includes(query);
+      const visible = typeMatches && textMatches;
+      card.classList.toggle('hide', !visible);
+      if (visible) visibleCards += 1;
+    });
+
+    document.querySelectorAll('[data-library-section]').forEach(section => {
+      const visibleInSection = section.querySelectorAll('[data-resource-title]:not(.hide)').length > 0;
+      section.classList.toggle('hide', !visibleInSection);
+    });
+
+    document.querySelector('#library-no-results')?.classList.toggle('hide', visibleCards > 0 || state.resources.length === 0);
+  };
+
+  filterButtons.forEach(button => {
     button.addEventListener('click', () => {
-      document.querySelectorAll('[data-resource-filter]').forEach(item => item.classList.remove('active'));
-      button.classList.add('active');
-      const filter = button.dataset.resourceFilter;
-      document.querySelectorAll('[data-resource-type]').forEach(card => {
-        card.classList.toggle('hide', filter !== 'all' && card.dataset.resourceType !== filter);
-      });
+      currentFilter = button.dataset.resourceFilter;
+      filterButtons.forEach(item => item.classList.toggle('active', item === button));
+      applyLibraryFilters();
     });
   });
+
+  searchInput?.addEventListener('input', applyLibraryFilters);
 }
 
 async function openResource(resourceId) {
