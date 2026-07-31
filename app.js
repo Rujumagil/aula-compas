@@ -2727,22 +2727,29 @@ function renderWorkspaceOverview() {
   const page = document.querySelector('#page');
   const folders = state.workspaces || [];
   const unassignedCourses = state.courses.filter(course => !course.workspace_id);
+  const unassignedResources = state.resources.filter(resource => !resource.workspace_id);
+  const hasContent = state.courses.length || state.resources.length;
 
   page.innerHTML = `
     <section class="workspace-hero">
       <div>
-        <span class="eyebrow">Organización por marcas y proyectos</span>
+        <span class="eyebrow">Administrador 2.0</span>
         <h1>Espacios de trabajo</h1>
-        <p>Cada carpeta mantiene separados sus cursos, libros, recursos, alumnos y configuración.</p>
+        <p>Abre una carpeta para administrar sus cursos publicados, borradores, alumnos, libros y recursos.</p>
       </div>
-      ${isAdmin() ? '<button class="btn btn-primary" type="button" id="new-workspace-button">＋ Crear espacio</button>' : ''}
+      <div class="workspace-hero-actions">
+        ${isAdmin() ? '<button class="btn btn-primary" type="button" id="new-workspace-button">＋ Crear espacio</button>' : ''}
+        ${isAdmin() && (!folders.length || unassignedCourses.length || unassignedResources.length)
+          ? '<button class="btn btn-secondary" type="button" id="repair-workspace-button">Reparar espacio principal</button>'
+          : ''}
+      </div>
     </section>
 
     <section class="workspace-summary-grid">
       <article><span>▣</span><div><strong>${folders.length}</strong><small>Espacios</small></div></article>
       <article><span>▤</span><div><strong>${state.courses.length}</strong><small>Cursos</small></div></article>
-      <article><span>▧</span><div><strong>${state.resources.length}</strong><small>Recursos</small></div></article>
-      <article><span>⌾</span><div><strong>${state.workspaceMembers.length}</strong><small>Asignaciones</small></div></article>
+      <article><span>✓</span><div><strong>${state.courses.filter(course => course.status === 'published').length}</strong><small>Publicados</small></div></article>
+      <article><span>◷</span><div><strong>${state.courses.filter(course => course.status !== 'published').length}</strong><small>Borradores</small></div></article>
     </section>
 
     ${isAdmin() ? `<section class="workspace-create-panel glass hide" id="workspace-create-panel">
@@ -2755,11 +2762,22 @@ function renderWorkspaceOverview() {
       </form>
     </section>` : ''}
 
+    ${isAdmin() && hasContent ? `<section class="admin-general-access glass">
+      <div>
+        <span class="eyebrow">Acceso de recuperación</span>
+        <h2>Administración general</h2>
+        <p>Desde aquí puedes volver a ver todos los cursos, cambiar su estado y asignar accesos, incluso si todavía no quedaron asociados a una carpeta.</p>
+      </div>
+      <a class="btn btn-primary" href="#workspace/general">Abrir administración general</a>
+    </section>` : ''}
+
     <section class="workspace-grid">
       ${folders.length ? folders.map(workspace => {
         const courseCount = workspaceCourseCount(workspace.id);
         const resourceCount = workspaceResourceCount(workspace.id);
         const memberCount = workspaceMemberCount(workspace.id);
+        const publishedCount = state.courses.filter(course => course.workspace_id === workspace.id && course.status === 'published').length;
+        const draftCount = state.courses.filter(course => course.workspace_id === workspace.id && course.status !== 'published').length;
         return `<article class="workspace-folder" style="--workspace-accent:${escapeHtml(workspace.accent_color || '#b58b32')}">
           <div class="workspace-folder-top">
             <div class="workspace-folder-icon">▰</div>
@@ -2770,6 +2788,8 @@ function renderWorkspaceOverview() {
             <p>${escapeHtml(workspace.description || 'Cursos y recursos organizados en una sola carpeta.')}</p>
             <div class="workspace-folder-metrics">
               <span><strong>${courseCount}</strong> cursos</span>
+              <span><strong>${publishedCount}</strong> publicados</span>
+              <span><strong>${draftCount}</strong> borradores</span>
               <span><strong>${resourceCount}</strong> recursos</span>
               <span><strong>${memberCount}</strong> miembros</span>
             </div>
@@ -2780,18 +2800,68 @@ function renderWorkspaceOverview() {
             <button class="btn btn-danger" type="button" data-delete-workspace="${escapeHtml(workspace.id)}" ${courseCount || resourceCount ? 'disabled title="Mueve o elimina el contenido antes de borrar"' : ''}>Eliminar</button>` : ''}
           </div>
         </article>`;
-      }).join('') : `<section class="empty-state glass workspace-empty"><div>▰</div><h2>No hay espacios de trabajo</h2><p>${isAdmin() ? 'Crea la primera carpeta para comenzar a organizar la academia.' : 'Un administrador debe asignarte a un espacio.'}</p></section>`}
+      }).join('') : `<section class="empty-state glass workspace-empty"><div>▰</div><h2>No hay espacios de trabajo visibles</h2><p>${isAdmin() ? 'Presiona “Reparar espacio principal” para recuperar la administración de cursos y accesos.' : 'Un administrador debe asignarte a un espacio.'}</p></section>`}
     </section>
 
-    ${unassignedCourses.length ? `<section class="workspace-warning glass"><strong>${unassignedCourses.length} cursos sin carpeta</strong><p>Ejecuta el archivo SQL de esta actualización para asignarlos automáticamente a Proyecto Compás.</p></section>` : ''}`;
+    ${(unassignedCourses.length || unassignedResources.length) ? `<section class="workspace-warning glass">
+      <div><strong>Contenido sin carpeta</strong><p>${unassignedCourses.length} cursos y ${unassignedResources.length} recursos todavía necesitan un espacio de trabajo.</p></div>
+      ${isAdmin() ? '<button class="btn btn-primary" id="repair-unassigned-button" type="button">Asignar a Proyecto Compás</button>' : ''}
+    </section>` : ''}`;
 
   document.querySelector('#new-workspace-button')?.addEventListener('click', () => {
     document.querySelector('#workspace-create-panel')?.classList.toggle('hide');
     document.querySelector('#workspace-create-panel input[name="name"]')?.focus();
   });
   document.querySelector('#workspace-form')?.addEventListener('submit', createWorkspace);
+  document.querySelector('#repair-workspace-button')?.addEventListener('click', repairDefaultWorkspace);
+  document.querySelector('#repair-unassigned-button')?.addEventListener('click', repairDefaultWorkspace);
   document.querySelectorAll('[data-rename-workspace]').forEach(button => button.addEventListener('click', () => renameWorkspace(button.dataset.renameWorkspace)));
   document.querySelectorAll('[data-delete-workspace]').forEach(button => button.addEventListener('click', () => deleteWorkspace(button.dataset.deleteWorkspace)));
+}
+
+async function repairDefaultWorkspace() {
+  if (!isAdmin()) return;
+  showToast('Reparando el espacio principal...');
+  try {
+    let workspace = state.workspaces.find(item => item.slug === 'proyecto-compas') || state.workspaces[0] || null;
+    if (!workspace) {
+      const { data, error } = await db.from('workspaces').insert({
+        name: 'Proyecto Compás',
+        slug: 'proyecto-compas',
+        description: 'Cursos, libros y recursos principales de Proyecto Compás.',
+        accent_color: '#b58b32',
+        created_by: state.user.id
+      }).select().single();
+      if (error) throw error;
+      workspace = data;
+    }
+
+    const { error: memberError } = await db.from('workspace_members').upsert({
+      workspace_id: workspace.id,
+      user_id: state.user.id,
+      role: 'owner'
+    }, { onConflict: 'workspace_id,user_id' });
+    if (memberError) throw memberError;
+
+    const unassignedCourseIds = state.courses.filter(course => !course.workspace_id).map(course => course.id);
+    if (unassignedCourseIds.length) {
+      const { error } = await db.from('courses').update({ workspace_id: workspace.id }).in('id', unassignedCourseIds);
+      if (error) throw error;
+    }
+
+    const unassignedResourceIds = state.resources.filter(resource => !resource.workspace_id).map(resource => resource.id);
+    if (unassignedResourceIds.length) {
+      const { error } = await db.from('resources').update({ workspace_id: workspace.id }).in('id', unassignedResourceIds);
+      if (error) throw error;
+    }
+
+    await loadApplicationData();
+    showToast('Espacio principal reparado.', 'success');
+    location.hash = `workspace/${workspace.id}`;
+  } catch (error) {
+    console.error(error);
+    showToast('No se pudo reparar desde la interfaz. Ejecuta el archivo 12-reparar-administrador-espacios.sql.', 'error');
+  }
 }
 
 async function createWorkspace(event) {
@@ -2853,10 +2923,17 @@ async function deleteWorkspace(workspaceId) {
 
 function renderWorkspaceAdmin(workspaceId) {
   const page = document.querySelector('#page');
-  const workspace = state.workspaces.find(item => item.id === workspaceId);
+  const generalMode = workspaceId === 'general' && isAdmin();
+  const workspace = generalMode
+    ? { id: 'general', name: 'Administración general', description: 'Vista de recuperación con todos los cursos, recursos y accesos de la plataforma.' }
+    : state.workspaces.find(item => item.id === workspaceId);
   if (!workspace) { state.activeWorkspaceId = null; return renderWorkspaceOverview(); }
-  const managedCourses = (state.courses || []).filter(course => course.workspace_id === workspaceId);
-  const managedResources = (state.resources || []).filter(resource => resource.workspace_id === workspaceId || managedCourses.some(course => course.id === resource.course_id));
+  const managedCourses = generalMode
+    ? (state.courses || [])
+    : (state.courses || []).filter(course => course.workspace_id === workspaceId);
+  const managedResources = generalMode
+    ? (state.resources || [])
+    : (state.resources || []).filter(resource => resource.workspace_id === workspaceId || managedCourses.some(course => course.id === resource.course_id));
   const publishedCourses = managedCourses.filter(course => course.status === 'published');
   const draftCourses = managedCourses.filter(course => course.status !== 'published');
   const totalModules = managedCourses.reduce((sum, course) => sum + (course.modules?.length || 0), 0);
@@ -2928,6 +3005,13 @@ function renderWorkspaceAdmin(workspaceId) {
       <button class="btn btn-primary" type="button" data-admin-scroll="create-course-panel">＋ Crear curso</button>
     </section>
 
+    <nav class="workspace-admin-tabs" aria-label="Secciones administrativas">
+      <a href="#admin-courses">Cursos</a>
+      <a href="#admin-resources">Biblioteca y recursos</a>
+      ${isAdmin() ? '<a href="#admin-users">Alumnos y accesos</a>' : ''}
+      <a href="#create-course-panel">Crear contenido</a>
+    </nav>
+
     <section class="instructor-summary-grid">
       <article class="instructor-summary-card">
         <span class="summary-icon">▤</span>
@@ -2962,7 +3046,7 @@ function renderWorkspaceAdmin(workspaceId) {
 
     <section class="instructor-section" id="admin-courses">
       <div class="section-heading instructor-section-heading">
-        <div><span class="eyebrow">Catálogo académico</span><h2>${isAdmin() ? 'Cursos de la plataforma' : 'Mis cursos'}</h2></div>
+        <div><span class="eyebrow">Catálogo académico</span><h2>${generalMode ? 'Todos los cursos' : isAdmin() ? 'Cursos del espacio' : 'Mis cursos'}</h2></div>
         <span class="section-count">${managedCourses.length} ${managedCourses.length === 1 ? 'curso' : 'cursos'}</span>
       </div>
       <div class="instructor-course-grid">${courseCards}</div>
@@ -2977,7 +3061,7 @@ function renderWorkspaceAdmin(workspaceId) {
       <div class="instructor-builder-grid">
         <article class="settings-card glass builder-card">
           <div class="builder-step"><span>1</span><div><strong>Crear curso</strong><small>Información general y publicación</small></div></div>
-          <form id="course-form" class="stack-form"><input type="hidden" name="workspaceId" value="${escapeHtml(workspace.id)}">
+          <form id="course-form" class="stack-form"><input type="hidden" name="workspaceId" value="${escapeHtml(generalMode ? (state.workspaces[0]?.id || '') : workspace.id)}">
             <div class="field"><label>Título</label><input name="title" required></div>
             <div class="field"><label>Subtítulo</label><input name="subtitle"></div>
             <div class="field"><label>Descripción</label><textarea name="description" rows="3"></textarea></div>
@@ -3101,7 +3185,7 @@ function renderWorkspaceAdmin(workspaceId) {
     <section class="settings-card glass instructor-content-panel" id="admin-resources">
       <div class="builder-step"><span>${isAdmin() ? '5' : '4'}</span><div><strong>Agregar libro o recurso</strong><small>Entrega materiales privados a tus alumnos</small></div></div>
       <p class="page-subtitle">El archivo se guarda en un depósito privado y solo lo abren las personas autorizadas.</p>
-      <form id="resource-form" class="admin-form admin-resource-form"><input type="hidden" name="workspaceId" value="${escapeHtml(workspace.id)}">
+      <form id="resource-form" class="admin-form admin-resource-form"><input type="hidden" name="workspaceId" value="${escapeHtml(generalMode ? (state.workspaces[0]?.id || '') : workspace.id)}">
         <select name="courseId"><option value="">Recurso general</option>${courseOptions}</select>
         <input name="title" placeholder="Título del recurso" required>
         <select name="resourceType" required><option value="book">Libro digital</option><option value="pdf">PDF</option><option value="template">Plantilla</option><option value="audio">Audio</option><option value="link">Enlace</option></select>

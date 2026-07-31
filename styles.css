@@ -1011,3 +1011,13 @@ h1,h2,h3{font-family:Georgia,"Times New Roman",serif;font-weight:500}
 .workspace-admin-hero{border-left:6px solid var(--gold)}
 @media(max-width:1120px){.workspace-grid{grid-template-columns:repeat(2,1fr)}.workspace-form{grid-template-columns:1fr 1fr}.workspace-summary-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:720px){.workspace-hero{align-items:stretch;flex-direction:column}.workspace-hero .btn{width:100%}.workspace-summary-grid,.workspace-grid,.workspace-form{grid-template-columns:1fr}.workspace-folder{min-height:0}.workspace-folder-body p{min-height:0}.workspace-folder-actions .btn{flex:1}.workspace-summary-grid article{padding:15px}}
+
+
+/* PASO 14 · ADMINISTRADOR 2.0 · REPARACIÓN DE ESPACIOS */
+.workspace-hero-actions{display:flex;gap:12px;flex-wrap:wrap;justify-content:flex-end}
+.admin-general-access{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:26px 28px;margin:22px 0;border:1px solid rgba(181,139,50,.28);background:linear-gradient(135deg,rgba(181,139,50,.10),rgba(255,255,255,.78))}
+.admin-general-access h2{margin:6px 0 8px;font-size:28px}.admin-general-access p{margin:0;max-width:720px;color:var(--muted)}
+.workspace-warning{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-top:22px;padding:22px 24px}.workspace-warning p{margin:5px 0 0}
+.workspace-admin-tabs{position:sticky;top:74px;z-index:20;display:flex;gap:8px;overflow:auto;padding:10px;margin:18px 0 22px;border:1px solid var(--line);border-radius:18px;background:rgba(250,248,244,.92);backdrop-filter:blur(16px);box-shadow:0 12px 34px rgba(22,35,55,.08)}
+.workspace-admin-tabs a{white-space:nowrap;padding:11px 15px;border-radius:12px;color:var(--text);font-weight:750;text-decoration:none}.workspace-admin-tabs a:hover{background:rgba(181,139,50,.12);color:var(--gold-dark)}
+@media(max-width:760px){.workspace-hero-actions,.admin-general-access,.workspace-warning{align-items:stretch;flex-direction:column}.workspace-hero-actions .btn,.admin-general-access .btn,.workspace-warning .btn{width:100%}.workspace-admin-tabs{top:62px}}
