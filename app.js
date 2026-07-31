@@ -2221,43 +2221,134 @@ function renderCertificate(courseId) {
 
 function renderProfile() {
   const page = document.querySelector('#page');
+  const completedCourses = state.courses.filter(course => courseProgress(course) === 100).length;
+  const completedLessons = state.progressRows.filter(row => row.completed).length;
+  const totalLessons = state.courses.reduce((sum, course) => sum + allLessons(course).length, 0);
+  const certificateCount = completedCourses;
+  const profileComplete = Boolean(state.profile?.full_name?.trim()) && Boolean(state.profile?.avatar_url?.trim());
+  const joinedAt = state.user?.created_at
+    ? new Intl.DateTimeFormat('es-MX', { month: 'long', year: 'numeric' }).format(new Date(state.user.created_at))
+    : 'Aula Compás';
+  const roleLabel = isAdmin() ? 'Administrador' : isInstructor() ? 'Instructor' : 'Alumno';
+  const initial = displayName().trim().charAt(0).toUpperCase() || 'A';
 
   page.innerHTML = `
-    <span class="eyebrow">Mi cuenta</span>
-    <h1 class="page-title">Mi perfil</h1>
+    <header class="profile-page-heading">
+      <div>
+        <span class="eyebrow">Mi cuenta</span>
+        <h1 class="page-title">Mi perfil</h1>
+        <p class="page-subtitle">Administra tus datos personales, accesos y preferencias de Aula Compás.</p>
+      </div>
+      <span class="profile-status-pill ${profileComplete ? 'complete' : ''}">
+        ${profileComplete ? '✓ Perfil completo' : '○ Completa tu perfil'}
+      </span>
+    </header>
 
-    <section class="profile-grid">
-      <article class="profile-card glass">
-        <img src="${escapeHtml(avatarUrl())}" alt="" onerror="imageErrorFallback(event, 'icono-oficial.png')">
-        <h1>${escapeHtml(displayName())}</h1>
-        <p>${escapeHtml(state.user.email)}</p>
-        <span class="badge">${isAdmin() ? 'Administrador' : isInstructor() ? 'Instructor' : 'Alumno'}</span>
-        <div class="profile-stats"><span><strong>${state.courses.length}</strong>Cursos</span><span><strong>${state.resources.length}</strong>Recursos</span></div>
-      </article>
+    <section class="profile-professional-layout">
+      <aside class="profile-identity-card glass">
+        <div class="profile-cover-band"></div>
+        <div class="profile-avatar-wrap">
+          <img src="${escapeHtml(avatarUrl())}" alt="Fotografía de ${escapeHtml(displayName())}" onerror="imageErrorFallback(event, 'icono-oficial.png')">
+          <span>${escapeHtml(initial)}</span>
+        </div>
+        <div class="profile-identity-copy">
+          <span class="profile-role-badge">${escapeHtml(roleLabel)}</span>
+          <h2>${escapeHtml(displayName())}</h2>
+          <p>${escapeHtml(state.user.email)}</p>
+          <small>Miembro desde ${escapeHtml(joinedAt)}</small>
+        </div>
 
-      <article class="settings-card glass">
-        <form id="profile-form">
-          <div class="field">
-            <label for="profile-name">Nombre completo</label>
-            <input id="profile-name" name="fullName" value="${escapeHtml(state.profile?.full_name || '')}" required>
+        <div class="profile-achievement-grid">
+          <article><strong>${state.courses.length}</strong><span>Cursos</span></article>
+          <article><strong>${completedLessons}</strong><span>Lecciones</span></article>
+          <article><strong>${certificateCount}</strong><span>Certificados</span></article>
+          <article><strong>${state.resources.length}</strong><span>Recursos</span></article>
+        </div>
+
+        <a class="btn btn-secondary profile-certificate-link" href="#certificates">Ver mis certificados</a>
+      </aside>
+
+      <div class="profile-main-column">
+        <section class="profile-settings-panel glass">
+          <div class="profile-section-heading">
+            <div>
+              <span class="eyebrow">Información personal</span>
+              <h2>Datos de tu cuenta</h2>
+            </div>
+            <span class="profile-section-icon">✎</span>
           </div>
-          <div class="field">
-            <label for="avatar-url">URL de fotografía</label>
-            <input id="avatar-url" name="avatarUrl" type="url" value="${escapeHtml(state.profile?.avatar_url || '')}" placeholder="https://...">
-          </div>
-          <button class="btn btn-primary" type="submit">Guardar perfil</button>
-        </form>
 
-        <div class="settings-row"><div><strong>Instalar Aula Compás</strong><small>Agrega la aplicación a tu pantalla de inicio.</small></div><button class="btn btn-secondary" data-install>Instalar</button></div>
-        <div class="settings-row"><div><strong>Mis certificados</strong><small>Consulta los reconocimientos de cursos completados.</small></div><a class="btn btn-secondary" href="#certificates">Ver certificados</a></div>
-        <div class="settings-row"><div><strong>Centro de ayuda</strong><small>Respuestas sobre compras, accesos y materiales.</small></div><a class="btn btn-secondary" href="#help">Obtener ayuda</a></div>
-        ${canManageContent() ? '<div class="settings-row"><div><strong>Panel de contenidos</strong><small>Gestiona cursos, módulos y materiales según tus permisos.</small></div><a class="btn btn-secondary" href="#admin">Abrir panel</a></div>' : ''}
-        <div class="settings-row"><div><strong>Cerrar sesión</strong><small>Finaliza la sesión en este dispositivo.</small></div><button class="btn btn-secondary" id="logout-button">Salir</button></div>
-      </article>
+          <form id="profile-form" class="profile-form-modern">
+            <div class="field">
+              <label for="profile-name">Nombre completo</label>
+              <input id="profile-name" name="fullName" value="${escapeHtml(state.profile?.full_name || '')}" placeholder="Escribe tu nombre completo" required>
+              <small>Este nombre aparecerá en tus certificados.</small>
+            </div>
+            <div class="field">
+              <label for="profile-email">Correo electrónico</label>
+              <input id="profile-email" value="${escapeHtml(state.user.email)}" disabled>
+              <small>Tu correo se utiliza para iniciar sesión.</small>
+            </div>
+            <div class="field profile-field-wide">
+              <label for="avatar-url">URL de fotografía</label>
+              <input id="avatar-url" name="avatarUrl" type="url" value="${escapeHtml(state.profile?.avatar_url || '')}" placeholder="https://ejemplo.com/mi-fotografia.jpg">
+              <small>Usa un enlace público directo a una imagen JPG, PNG o WebP.</small>
+            </div>
+            <div class="profile-form-actions profile-field-wide">
+              <span>Los cambios se reflejarán en todo el aula.</span>
+              <button class="btn btn-primary" type="submit">Guardar cambios</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="profile-progress-panel glass">
+          <div class="profile-section-heading">
+            <div>
+              <span class="eyebrow">Actividad académica</span>
+              <h2>Tu avance en Aula Compás</h2>
+            </div>
+            <a href="#courses">Ver cursos</a>
+          </div>
+          <div class="profile-progress-summary">
+            <div class="profile-progress-ring" style="--value:${totalLessons ? Math.round((completedLessons / totalLessons) * 100) : 0}">
+              <strong>${totalLessons ? Math.round((completedLessons / totalLessons) * 100) : 0}%</strong>
+            </div>
+            <div>
+              <h3>${completedLessons} de ${totalLessons} lecciones completadas</h3>
+              <p>${completedCourses ? `Has finalizado ${completedCourses} ${completedCourses === 1 ? 'curso' : 'cursos'}.` : 'Tu progreso comenzará cuando completes tu primera lección.'}</p>
+              <div class="profile-linear-progress"><span style="width:${totalLessons ? Math.round((completedLessons / totalLessons) * 100) : 0}%"></span></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="profile-options-grid">
+          <article class="profile-option-card glass">
+            <span class="profile-option-icon">▣</span>
+            <div><h3>Instalar Aula Compás</h3><p>Accede desde tu pantalla de inicio como una aplicación.</p></div>
+            <button class="profile-option-action" data-install type="button">Instalar</button>
+          </article>
+          <article class="profile-option-card glass">
+            <span class="profile-option-icon">?</span>
+            <div><h3>Centro de ayuda</h3><p>Resuelve dudas sobre accesos, compras y materiales.</p></div>
+            <a class="profile-option-action" href="#help">Abrir</a>
+          </article>
+          ${canManageContent() ? `
+          <article class="profile-option-card glass">
+            <span class="profile-option-icon">⚙</span>
+            <div><h3>Panel de contenidos</h3><p>Gestiona cursos, módulos y recursos autorizados.</p></div>
+            <a class="profile-option-action" href="#admin">Abrir</a>
+          </article>` : ''}
+          <article class="profile-option-card glass profile-option-danger">
+            <span class="profile-option-icon">↪</span>
+            <div><h3>Cerrar sesión</h3><p>Finaliza la sesión de manera segura en este dispositivo.</p></div>
+            <button class="profile-option-action" id="logout-button" type="button">Salir</button>
+          </article>
+        </section>
+      </div>
     </section>`;
 
-  document.querySelector('#profile-form').addEventListener('submit', updateProfile);
-  document.querySelector('#logout-button').addEventListener('click', logout);
+  document.querySelector('#profile-form')?.addEventListener('submit', updateProfile);
+  document.querySelector('#logout-button')?.addEventListener('click', logout);
   document.querySelectorAll('[data-install]').forEach(button => button.addEventListener('click', installApp));
 }
 
