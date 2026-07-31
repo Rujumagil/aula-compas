@@ -48,17 +48,17 @@ const state = {
 };
 
 const navItems = [
-  ['home','⌂','Inicio'],
-  ['courses','▤','Mis cursos'],
-  ['resources','▧','Biblioteca'],
-  ['agenda','◷','Agenda'],
-  ['progress','◎','Progreso'],
-  ['help','?','Ayuda'],
-  ['profile','♡','Perfil']
+  ['home', '⌂', 'Inicio'],
+  ['courses', '▤', 'Mis cursos'],
+  ['resources', '▧', 'Mi biblioteca'],
+  ['agenda', '◷', 'Calendario'],
+  ['certificates', '◇', 'Certificados'],
+  ['help', '?', 'Ayuda'],
+  ['profile', '♡', 'Mi perfil']
 ];
 
 const mobileNavItems = navItems.filter(([id]) =>
-  ['home', 'courses', 'resources', 'agenda', 'progress', 'profile'].includes(id)
+  ['home', 'courses', 'resources', 'agenda', 'certificates', 'profile'].includes(id)
 );
 
 const PUBLIC_PROGRAMS = [
@@ -860,7 +860,8 @@ async function route() {
   renderShell(page);
 
   if (page === 'home') renderHome();
-  else if (page === 'courses') renderCourses();
+  else if (page === 'catalog') renderPublicCatalog(id);
+  else if (page === 'courses') renderCourses();  
   else if (page === 'resources') renderResources();
   else if (page === 'agenda') renderAgenda();
   else if (page === 'progress') renderProgress();
@@ -878,8 +879,10 @@ async function route() {
 
 function renderShell(active) {
   const activeNav = ['course', 'lesson'].includes(active)
-    ? 'courses'
-    : ['certificate', 'certificates'].includes(active) ? 'progress' : active;
+  ? 'courses'
+  : ['certificate', 'certificates'].includes(active)
+    ? 'certificates'
+    : active;
   app.innerHTML = `
     <div class="app-shell">
       <aside class="sidebar">
@@ -888,12 +891,25 @@ function renderShell(active) {
           <span><strong>Aula Compás</strong><span>por Proyecto Compás</span></span>
         </a>
 
-        <span class="sidebar-label">APRENDIZAJE</span>
-        <nav class="sidebar-nav">
-          ${navItems.map(([id, icon, label]) => `
-            <a class="nav-link ${activeNav === id ? 'active' : ''}" href="#${id}">
-              <span class="nav-icon">${icon}</span>${label}
-            </a>`).join('')}
+       <span class="sidebar-label">MI ESPACIO</span>
+       <nav class="sidebar-nav">
+  ${navItems.map(([id, icon, label]) => `
+    <a class="nav-link ${activeNav === id ? 'active' : ''}" href="#${id}">
+      <span class="nav-icon">${icon}</span>
+      ${label}
+    </a>`).join('')}
+
+  <a class="nav-link nav-link-secondary" href="#catalog">
+    <span class="nav-icon">＋</span>
+    Explorar cursos
+  </a>
+
+  ${canManageContent() ? `
+    <a class="nav-link admin-nav-link ${activeNav === 'admin' ? 'active' : ''}" href="#admin">
+      <span class="nav-icon">⚙</span>
+      ${isAdmin() ? 'Administrar' : 'Mis contenidos'}
+    </a>` : ''}
+</nav>
           ${canManageContent() ? `
             <a class="nav-link admin-nav-link ${activeNav === 'admin' ? 'active' : ''}" href="#admin">
               <span class="nav-icon">⚙</span>${isAdmin() ? 'Administrar' : 'Mis contenidos'}
