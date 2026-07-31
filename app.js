@@ -43,6 +43,9 @@ const state = {
   progressRows: [],
   profiles: [],
   enrollments: [],
+  workspaces: [],
+  workspaceMembers: [],
+  activeWorkspaceId: null,
   recoveryMode: false,
   loading: true
 };
@@ -283,6 +286,9 @@ function clearUserData() {
   state.progressRows = [];
   state.profiles = [];
   state.enrollments = [];
+  state.workspaces = [];
+  state.workspaceMembers = [];
+  state.activeWorkspaceId = null;
 }
 
 async function loadApplicationData() {
@@ -307,6 +313,19 @@ async function loadApplicationData() {
     full_name: state.user.user_metadata?.full_name || '',
     role: 'student'
   };
+
+  state.workspaces = [];
+  state.workspaceMembers = [];
+  if (isAdmin() || isInstructor()) {
+    const [workspacesResult, workspaceMembersResult] = await Promise.all([
+      db.from('workspaces').select('*').order('name', { ascending: true }),
+      db.from('workspace_members').select('*')
+    ]);
+    if (workspacesResult.error) console.error('Workspaces error:', workspacesResult.error);
+    if (workspaceMembersResult.error) console.error('Workspace members error:', workspaceMembersResult.error);
+    state.workspaces = workspacesResult.data || [];
+    state.workspaceMembers = workspaceMembersResult.data || [];
+  }
 
   const coursesResult = await db
     .from('courses')
@@ -912,14 +931,21 @@ async function route() {
   else if (page === 'course') renderCourse(id);
   else if (page === 'lesson') await renderLesson(id, lessonId);
   else if (page === 'builder' && canManageContent()) await renderBlockBuilder(id, lessonId);
-  else if (page === 'admin' && canManageContent()) renderAdmin();
+  else if (page === 'workspace' && canManageContent()) {
+    state.activeWorkspaceId = id || null;
+    renderAdmin();
+  }
+  else if (page === 'admin' && canManageContent()) {
+    state.activeWorkspaceId = null;
+    renderAdmin();
+  }
   else renderHome();
 }
 
 function renderShell(active) {
   const activeNav = ['course', 'lesson'].includes(active)
   ? 'courses'
-  : active === 'builder'
+  : ['builder', 'workspace'].includes(active)
     ? 'admin'
     : ['certificate', 'certificates'].includes(active)
       ? 'certificates'
@@ -2679,9 +2705,158 @@ async function logout() {
   if (error) showToast('No se pudo cerrar la sesión.', 'error');
 }
 
+function workspaceCourseCount(workspaceId) {
+  return state.courses.filter(course => course.workspace_id === workspaceId).length;
+}
+
+function workspaceResourceCount(workspaceId) {
+  const courseIds = new Set(state.courses.filter(course => course.workspace_id === workspaceId).map(course => course.id));
+  return state.resources.filter(resource => resource.workspace_id === workspaceId || courseIds.has(resource.course_id)).length;
+}
+
+function workspaceMemberCount(workspaceId) {
+  return state.workspaceMembers.filter(member => member.workspace_id === workspaceId).length;
+}
+
 function renderAdmin() {
+  if (state.activeWorkspaceId) return renderWorkspaceAdmin(state.activeWorkspaceId);
+  return renderWorkspaceOverview();
+}
+
+function renderWorkspaceOverview() {
   const page = document.querySelector('#page');
-  const managedCourses = state.courses || [];
+  const folders = state.workspaces || [];
+  const unassignedCourses = state.courses.filter(course => !course.workspace_id);
+
+  page.innerHTML = `
+    <section class="workspace-hero">
+      <div>
+        <span class="eyebrow">Organización por marcas y proyectos</span>
+        <h1>Espacios de trabajo</h1>
+        <p>Cada carpeta mantiene separados sus cursos, libros, recursos, alumnos y configuración.</p>
+      </div>
+      ${isAdmin() ? '<button class="btn btn-primary" type="button" id="new-workspace-button">＋ Crear espacio</button>' : ''}
+    </section>
+
+    <section class="workspace-summary-grid">
+      <article><span>▣</span><div><strong>${folders.length}</strong><small>Espacios</small></div></article>
+      <article><span>▤</span><div><strong>${state.courses.length}</strong><small>Cursos</small></div></article>
+      <article><span>▧</span><div><strong>${state.resources.length}</strong><small>Recursos</small></div></article>
+      <article><span>⌾</span><div><strong>${state.workspaceMembers.length}</strong><small>Asignaciones</small></div></article>
+    </section>
+
+    ${isAdmin() ? `<section class="workspace-create-panel glass hide" id="workspace-create-panel">
+      <div class="section-heading"><div><span class="eyebrow">Nueva carpeta</span><h2>Crear espacio de trabajo</h2></div></div>
+      <form id="workspace-form" class="workspace-form">
+        <label><span>Nombre</span><input name="name" placeholder="Ej. ETERNI" required maxlength="80"></label>
+        <label><span>Descripción</span><input name="description" placeholder="Cursos, libros y programas de la marca"></label>
+        <label><span>Color de identificación</span><input name="accentColor" type="color" value="#b58b32"></label>
+        <button class="btn btn-primary" type="submit">Crear espacio</button>
+      </form>
+    </section>` : ''}
+
+    <section class="workspace-grid">
+      ${folders.length ? folders.map(workspace => {
+        const courseCount = workspaceCourseCount(workspace.id);
+        const resourceCount = workspaceResourceCount(workspace.id);
+        const memberCount = workspaceMemberCount(workspace.id);
+        return `<article class="workspace-folder" style="--workspace-accent:${escapeHtml(workspace.accent_color || '#b58b32')}">
+          <div class="workspace-folder-top">
+            <div class="workspace-folder-icon">▰</div>
+            <span>${isAdmin() ? 'Espacio administrado' : 'Espacio asignado'}</span>
+          </div>
+          <div class="workspace-folder-body">
+            <h2>${escapeHtml(workspace.name)}</h2>
+            <p>${escapeHtml(workspace.description || 'Cursos y recursos organizados en una sola carpeta.')}</p>
+            <div class="workspace-folder-metrics">
+              <span><strong>${courseCount}</strong> cursos</span>
+              <span><strong>${resourceCount}</strong> recursos</span>
+              <span><strong>${memberCount}</strong> miembros</span>
+            </div>
+          </div>
+          <div class="workspace-folder-actions">
+            <a class="btn btn-primary" href="#workspace/${escapeHtml(workspace.id)}">Abrir carpeta</a>
+            ${isAdmin() ? `<button class="btn btn-secondary" type="button" data-rename-workspace="${escapeHtml(workspace.id)}">Renombrar</button>
+            <button class="btn btn-danger" type="button" data-delete-workspace="${escapeHtml(workspace.id)}" ${courseCount || resourceCount ? 'disabled title="Mueve o elimina el contenido antes de borrar"' : ''}>Eliminar</button>` : ''}
+          </div>
+        </article>`;
+      }).join('') : `<section class="empty-state glass workspace-empty"><div>▰</div><h2>No hay espacios de trabajo</h2><p>${isAdmin() ? 'Crea la primera carpeta para comenzar a organizar la academia.' : 'Un administrador debe asignarte a un espacio.'}</p></section>`}
+    </section>
+
+    ${unassignedCourses.length ? `<section class="workspace-warning glass"><strong>${unassignedCourses.length} cursos sin carpeta</strong><p>Ejecuta el archivo SQL de esta actualización para asignarlos automáticamente a Proyecto Compás.</p></section>` : ''}`;
+
+  document.querySelector('#new-workspace-button')?.addEventListener('click', () => {
+    document.querySelector('#workspace-create-panel')?.classList.toggle('hide');
+    document.querySelector('#workspace-create-panel input[name="name"]')?.focus();
+  });
+  document.querySelector('#workspace-form')?.addEventListener('submit', createWorkspace);
+  document.querySelectorAll('[data-rename-workspace]').forEach(button => button.addEventListener('click', () => renameWorkspace(button.dataset.renameWorkspace)));
+  document.querySelectorAll('[data-delete-workspace]').forEach(button => button.addEventListener('click', () => deleteWorkspace(button.dataset.deleteWorkspace)));
+}
+
+async function createWorkspace(event) {
+  event.preventDefault();
+  const formElement = event.currentTarget;
+  const form = new FormData(formElement);
+  const name = String(form.get('name') || '').trim();
+  if (!name) return;
+  setFormBusy(formElement, true);
+  try {
+    const { data: workspace, error } = await db.from('workspaces').insert({
+      name,
+      slug: `${slugify(name)}-${Date.now().toString().slice(-5)}`,
+      description: String(form.get('description') || '').trim() || null,
+      accent_color: String(form.get('accentColor') || '#b58b32'),
+      created_by: state.user.id
+    }).select().single();
+    if (error) throw error;
+    const { error: memberError } = await db.from('workspace_members').insert({
+      workspace_id: workspace.id,
+      user_id: state.user.id,
+      role: 'owner'
+    });
+    if (memberError) throw memberError;
+    showToast('Espacio creado correctamente.', 'success');
+    await loadApplicationData();
+    state.activeWorkspaceId = workspace.id;
+    location.hash = `workspace/${workspace.id}`;
+  } catch (error) {
+    console.error(error);
+    showToast(error.message || 'No se pudo crear el espacio.', 'error');
+  } finally {
+    setFormBusy(formElement, false);
+  }
+}
+
+async function renameWorkspace(workspaceId) {
+  const workspace = state.workspaces.find(item => item.id === workspaceId);
+  if (!workspace) return;
+  const name = prompt('Nuevo nombre del espacio:', workspace.name);
+  if (!name?.trim() || name.trim() === workspace.name) return;
+  const { error } = await db.from('workspaces').update({ name: name.trim(), updated_at: new Date().toISOString() }).eq('id', workspaceId);
+  if (error) return showToast(error.message, 'error');
+  showToast('Espacio actualizado.', 'success');
+  await loadApplicationData();
+  renderWorkspaceOverview();
+}
+
+async function deleteWorkspace(workspaceId) {
+  const workspace = state.workspaces.find(item => item.id === workspaceId);
+  if (!workspace || workspaceCourseCount(workspaceId) || workspaceResourceCount(workspaceId)) return;
+  if (!confirm(`¿Eliminar la carpeta “${workspace.name}”?`)) return;
+  const { error } = await db.from('workspaces').delete().eq('id', workspaceId);
+  if (error) return showToast(error.message, 'error');
+  showToast('Espacio eliminado.', 'success');
+  await loadApplicationData();
+  renderWorkspaceOverview();
+}
+
+function renderWorkspaceAdmin(workspaceId) {
+  const page = document.querySelector('#page');
+  const workspace = state.workspaces.find(item => item.id === workspaceId);
+  if (!workspace) { state.activeWorkspaceId = null; return renderWorkspaceOverview(); }
+  const managedCourses = (state.courses || []).filter(course => course.workspace_id === workspaceId);
+  const managedResources = (state.resources || []).filter(resource => resource.workspace_id === workspaceId || managedCourses.some(course => course.id === resource.course_id));
   const publishedCourses = managedCourses.filter(course => course.status === 'published');
   const draftCourses = managedCourses.filter(course => course.status !== 'published');
   const totalModules = managedCourses.reduce((sum, course) => sum + (course.modules?.length || 0), 0);
@@ -2743,13 +2918,12 @@ function renderAdmin() {
       </div>`;
 
   page.innerHTML = `
-    <section class="instructor-hero">
+    <a class="back-link workspace-back-link" href="#admin">← Volver a espacios</a>
+    <section class="instructor-hero workspace-admin-hero">
       <div>
-        <span class="eyebrow">${isAdmin() ? 'Administración general' : 'Espacio del instructor'}</span>
-        <h1>${isAdmin() ? 'Panel de Aula Compás' : 'Panel del instructor'}</h1>
-        <p>${isAdmin()
-          ? 'Supervisa cursos, usuarios, inscripciones y contenidos desde un solo lugar.'
-          : 'Organiza tus cursos y prepara experiencias de aprendizaje claras para tus alumnos.'}</p>
+        <span class="eyebrow">Espacio de trabajo</span>
+        <h1>${escapeHtml(workspace.name)}</h1>
+        <p>${escapeHtml(workspace.description || 'Cursos, libros, recursos y alumnos organizados dentro de esta carpeta.')}</p>
       </div>
       <button class="btn btn-primary" type="button" data-admin-scroll="create-course-panel">＋ Crear curso</button>
     </section>
@@ -2803,7 +2977,7 @@ function renderAdmin() {
       <div class="instructor-builder-grid">
         <article class="settings-card glass builder-card">
           <div class="builder-step"><span>1</span><div><strong>Crear curso</strong><small>Información general y publicación</small></div></div>
-          <form id="course-form" class="stack-form">
+          <form id="course-form" class="stack-form"><input type="hidden" name="workspaceId" value="${escapeHtml(workspace.id)}">
             <div class="field"><label>Título</label><input name="title" required></div>
             <div class="field"><label>Subtítulo</label><input name="subtitle"></div>
             <div class="field"><label>Descripción</label><textarea name="description" rows="3"></textarea></div>
@@ -2927,7 +3101,7 @@ function renderAdmin() {
     <section class="settings-card glass instructor-content-panel" id="admin-resources">
       <div class="builder-step"><span>${isAdmin() ? '5' : '4'}</span><div><strong>Agregar libro o recurso</strong><small>Entrega materiales privados a tus alumnos</small></div></div>
       <p class="page-subtitle">El archivo se guarda en un depósito privado y solo lo abren las personas autorizadas.</p>
-      <form id="resource-form" class="admin-form admin-resource-form">
+      <form id="resource-form" class="admin-form admin-resource-form"><input type="hidden" name="workspaceId" value="${escapeHtml(workspace.id)}">
         <select name="courseId"><option value="">Recurso general</option>${courseOptions}</select>
         <input name="title" placeholder="Título del recurso" required>
         <select name="resourceType" required><option value="book">Libro digital</option><option value="pdf">PDF</option><option value="template">Plantilla</option><option value="audio">Audio</option><option value="link">Enlace</option></select>
@@ -2941,9 +3115,9 @@ function renderAdmin() {
     </section>
 
     <section class="settings-card glass instructor-content-panel" id="admin-resource-list">
-      <div class="section-heading"><div><span class="eyebrow">Biblioteca administrada</span><h2>Libros, manuales y recursos</h2></div><span class="section-count">${state.resources.length} recursos</span></div>
+      <div class="section-heading"><div><span class="eyebrow">Biblioteca administrada</span><h2>Libros, manuales y recursos</h2></div><span class="section-count">${managedResources.length} recursos</span></div>
       <div class="admin-resource-grid">
-        ${state.resources.length ? state.resources.map(resource => `
+        ${managedResources.length ? managedResources.map(resource => `
           <article class="admin-resource-card">
             <img src="${escapeHtml(normalizeMediaUrl(resource.thumbnail_url, resource.resource_type === 'book' ? 'recurso-cuentos.webp' : 'recurso-manual.webp'))}" alt="Portada de ${escapeHtml(resource.title)}" onerror="imageErrorFallback(event, 'recurso-manual.webp')">
             <div>
@@ -3043,6 +3217,7 @@ async function createCourse(event) {
     if (coverFile?.size) validateCoverImage(coverFile);
     const title = String(form.get('title')).trim();
     const { data: course, error } = await db.from('courses').insert({
+      workspace_id: String(form.get('workspaceId') || state.activeWorkspaceId || '').trim() || null,
       title,
       slug: `${slugify(title)}-${Date.now().toString().slice(-5)}`,
       subtitle: String(form.get('subtitle')).trim() || null,
@@ -3308,6 +3483,7 @@ async function createResource(event) {
     }
 
     const { data: resource, error } = await db.from('resources').insert({
+      workspace_id: String(form.get('workspaceId') || state.activeWorkspaceId || '').trim() || null,
       course_id: courseId || null,
       title: String(form.get('title')).trim(),
       resource_type: String(form.get('resourceType')).trim(),
@@ -3620,7 +3796,7 @@ async function renderBlockBuilder(courseId, selectedLessonId = '') {
   page.innerHTML = `
     <section class="builder-shell">
       <header class="builder-topbar">
-        <div><a class="back-link" href="#admin">← Panel del instructor</a><span class="eyebrow">Editor profesional</span><h1>${escapeHtml(course.title)}</h1><p data-builder-status>Todos los cambios están guardados</p></div>
+        <div><a class="back-link" href="${course.workspace_id ? `#workspace/${course.workspace_id}` : '#admin'}">← Volver a la carpeta</a><span class="eyebrow">Editor profesional</span><h1>${escapeHtml(course.title)}</h1><p data-builder-status>Todos los cambios están guardados</p></div>
         <div class="builder-top-actions"><a class="btn btn-secondary" href="#lesson/${course.id}/${selectedLesson.id}" target="_blank">Vista alumno</a><button class="btn btn-secondary" id="save-course-version" type="button">Guardar versión</button><button class="btn btn-primary" id="publish-from-builder" type="button">${course.status === 'published' ? 'Guardar publicado' : 'Publicar curso'}</button></div>
       </header>
       <div class="builder-layout">

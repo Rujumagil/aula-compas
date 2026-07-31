@@ -971,3 +971,43 @@ h1,h2,h3{font-family:Georgia,"Times New Roman",serif;font-weight:500}
 .student-content-block.media-block video{width:100%;height:100%;object-fit:contain;background:#111}
 .student-content-block.file-block small{color:var(--muted);font-size:10px}
 @media(max-width:600px){.builder-media-file-row>*{width:100%}.builder-upload-details{flex-direction:column}}
+
+
+/* =========================================================
+   PASO 13 · ESPACIOS DE TRABAJO Y CARPETAS
+   ========================================================= */
+.workspace-hero{display:flex;justify-content:space-between;align-items:end;gap:28px;margin-bottom:24px;padding:30px;border:1px solid rgba(181,139,50,.18);border-radius:26px;background:linear-gradient(145deg,rgba(255,255,255,.96),rgba(247,242,233,.88));box-shadow:0 18px 48px rgba(38,27,41,.08)}
+.workspace-hero h1{margin:8px 0 10px;font:700 clamp(42px,5vw,64px)/.95 "Cormorant Garamond",serif;color:var(--ink)}
+.workspace-hero p{max-width:720px;margin:0;color:var(--muted);line-height:1.65}
+.workspace-summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.workspace-summary-grid article{display:flex;align-items:center;gap:14px;padding:18px 20px;border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.9)}
+.workspace-summary-grid article>span{display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:#f1e5c9;color:#745717;font-size:20px}
+.workspace-summary-grid strong{display:block;font-size:26px;color:var(--ink)}
+.workspace-summary-grid small{color:var(--muted)}
+.workspace-create-panel{margin-bottom:24px;padding:24px}
+.workspace-form{display:grid;grid-template-columns:1fr 1.6fr 140px auto;gap:14px;align-items:end}
+.workspace-form label{display:grid;gap:7px;color:var(--muted);font-size:12px;font-weight:700}
+.workspace-form input{min-height:46px;padding:0 13px;border:1px solid var(--line);border-radius:12px;background:#fff}
+.workspace-form input[type=color]{padding:5px;width:100%}
+.workspace-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.workspace-folder{position:relative;display:flex;flex-direction:column;min-height:330px;overflow:hidden;border:1px solid color-mix(in srgb,var(--workspace-accent) 35%,#e8dfe7);border-radius:26px;background:#fff;box-shadow:0 18px 50px rgba(42,28,45,.09);transition:transform .2s ease,box-shadow .2s ease}
+.workspace-folder::before{content:"";position:absolute;inset:0 0 auto;height:7px;background:var(--workspace-accent)}
+.workspace-folder:hover{transform:translateY(-5px);box-shadow:0 26px 60px rgba(42,28,45,.14)}
+.workspace-folder-top{display:flex;justify-content:space-between;align-items:center;padding:26px 26px 10px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:800}
+.workspace-folder-icon{display:grid;place-items:center;width:58px;height:48px;border-radius:12px 12px 15px 15px;background:color-mix(in srgb,var(--workspace-accent) 18%,#fff);color:var(--workspace-accent);font-size:30px}
+.workspace-folder-body{padding:12px 26px 22px;flex:1}
+.workspace-folder-body h2{margin:0 0 10px;font:700 40px/1 "Cormorant Garamond",serif;color:var(--ink)}
+.workspace-folder-body p{min-height:50px;margin:0;color:var(--muted);line-height:1.55}
+.workspace-folder-metrics{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.workspace-folder-metrics span{padding:8px 10px;border-radius:999px;background:#f6f1f5;color:#6f6271;font-size:11px}
+.workspace-folder-metrics strong{color:var(--ink)}
+.workspace-folder-actions{display:flex;flex-wrap:wrap;gap:8px;padding:18px 26px 24px;border-top:1px solid var(--line)}
+.workspace-folder-actions .btn{min-height:40px;padding:10px 14px}
+.workspace-empty{grid-column:1/-1;padding:70px 25px;text-align:center}
+.workspace-empty>div{font-size:54px;color:#a77f2e}
+.workspace-warning{margin-top:22px;padding:20px 24px;border-left:5px solid #c3983c}
+.workspace-warning p{margin:6px 0 0;color:var(--muted)}
+.workspace-back-link{display:inline-flex;margin-bottom:16px}
+.workspace-admin-hero{border-left:6px solid var(--gold)}
+@media(max-width:1120px){.workspace-grid{grid-template-columns:repeat(2,1fr)}.workspace-form{grid-template-columns:1fr 1fr}.workspace-summary-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:720px){.workspace-hero{align-items:stretch;flex-direction:column}.workspace-hero .btn{width:100%}.workspace-summary-grid,.workspace-grid,.workspace-form{grid-template-columns:1fr}.workspace-folder{min-height:0}.workspace-folder-body p{min-height:0}.workspace-folder-actions .btn{flex:1}.workspace-summary-grid article{padding:15px}}
