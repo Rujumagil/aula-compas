@@ -2847,6 +2847,63 @@ function renderAdmin() {
       </form>
     </section>
 
+    <section class="settings-card glass instructor-content-panel" id="course-structure-manager">
+      <div class="section-heading instructor-section-heading">
+        <div><span class="eyebrow">Constructor visual</span><h2>Organizar módulos y lecciones</h2></div>
+        <span class="section-count">${totalModules} módulos · ${totalLessons} lecciones</span>
+      </div>
+      <p class="page-subtitle">Edita títulos, cambia el orden o elimina contenido sin afectar los demás cursos.</p>
+      <div class="course-structure-list">
+        ${managedCourses.length ? managedCourses.map(course => `
+          <article class="structure-course-card">
+            <div class="structure-course-header">
+              <div>
+                <span class="status-pill ${course.status === 'published' ? 'available' : ''}">${course.status === 'published' ? 'Publicado' : 'Borrador'}</span>
+                <h3>${escapeHtml(course.title)}</h3>
+              </div>
+              <button class="btn btn-secondary" type="button" data-admin-scroll="admin-content" data-select-course="${escapeHtml(course.id)}">Agregar lección</button>
+            </div>
+            <div class="structure-modules">
+              ${(course.modules || []).length ? course.modules.map((module, moduleIndex) => `
+                <section class="structure-module-card">
+                  <div class="structure-module-header">
+                    <div class="structure-order-number">${moduleIndex + 1}</div>
+                    <div class="structure-title-block">
+                      <strong>${escapeHtml(module.title)}</strong>
+                      <small>${module.lessons?.length || 0} ${(module.lessons?.length || 0) === 1 ? 'lección' : 'lecciones'}</small>
+                    </div>
+                    <div class="structure-actions">
+                      <button type="button" title="Subir módulo" data-move-module="${escapeHtml(module.id)}" data-direction="up" ${moduleIndex === 0 ? 'disabled' : ''}>↑</button>
+                      <button type="button" title="Bajar módulo" data-move-module="${escapeHtml(module.id)}" data-direction="down" ${moduleIndex === course.modules.length - 1 ? 'disabled' : ''}>↓</button>
+                      <button type="button" title="Editar módulo" data-edit-module="${escapeHtml(module.id)}">Editar</button>
+                      <button class="danger" type="button" title="Eliminar módulo" data-delete-module="${escapeHtml(module.id)}">Eliminar</button>
+                    </div>
+                  </div>
+                  <div class="structure-lessons">
+                    ${(module.lessons || []).length ? module.lessons.map((lesson, lessonIndex) => `
+                      <div class="structure-lesson-row">
+                        <span class="lesson-position">${lessonIndex + 1}</span>
+                        <div class="structure-title-block">
+                          <strong>${escapeHtml(lesson.title)}</strong>
+                          <small>${Number(lesson.duration_minutes) || 0} min${lesson.video_url ? ' · Video' : ''}</small>
+                        </div>
+                        <div class="structure-actions lesson-actions">
+                          <button type="button" title="Subir lección" data-move-lesson="${escapeHtml(lesson.id)}" data-direction="up" ${lessonIndex === 0 ? 'disabled' : ''}>↑</button>
+                          <button type="button" title="Bajar lección" data-move-lesson="${escapeHtml(lesson.id)}" data-direction="down" ${lessonIndex === module.lessons.length - 1 ? 'disabled' : ''}>↓</button>
+                          <button type="button" data-edit-lesson="${escapeHtml(lesson.id)}">Editar</button>
+                          <button class="danger" type="button" data-delete-lesson="${escapeHtml(lesson.id)}">Eliminar</button>
+                        </div>
+                      </div>
+                    `).join('') : '<div class="structure-empty">Este módulo todavía no tiene lecciones.</div>'}
+                  </div>
+                </section>
+              `).join('') : '<div class="structure-empty">Este curso todavía no tiene módulos.</div>'}
+            </div>
+          </article>
+        `).join('') : '<div class="instructor-empty-state"><span>▤</span><h3>Aún no hay contenido</h3><p>Crea un curso y después organiza sus módulos y lecciones aquí.</p></div>'}
+      </div>
+    </section>
+
     <section class="settings-card glass instructor-content-panel" id="admin-resources">
       <div class="builder-step"><span>${isAdmin() ? '5' : '4'}</span><div><strong>Agregar libro o recurso</strong><small>Entrega materiales privados a tus alumnos</small></div></div>
       <p class="page-subtitle">El archivo se guarda en un depósito privado y solo lo abren las personas autorizadas.</p>
@@ -2913,6 +2970,24 @@ function renderAdmin() {
   );
   document.querySelectorAll('[data-remove-resource-cover]').forEach(button =>
     button.addEventListener('click', () => removeResourceCover(button.dataset.removeResourceCover))
+  );
+  document.querySelectorAll('[data-edit-module]').forEach(button =>
+    button.addEventListener('click', () => editModule(button.dataset.editModule))
+  );
+  document.querySelectorAll('[data-delete-module]').forEach(button =>
+    button.addEventListener('click', () => deleteModule(button.dataset.deleteModule))
+  );
+  document.querySelectorAll('[data-move-module]').forEach(button =>
+    button.addEventListener('click', () => moveModule(button.dataset.moveModule, button.dataset.direction))
+  );
+  document.querySelectorAll('[data-edit-lesson]').forEach(button =>
+    button.addEventListener('click', () => editLesson(button.dataset.editLesson))
+  );
+  document.querySelectorAll('[data-delete-lesson]').forEach(button =>
+    button.addEventListener('click', () => deleteLesson(button.dataset.deleteLesson))
+  );
+  document.querySelectorAll('[data-move-lesson]').forEach(button =>
+    button.addEventListener('click', () => moveLesson(button.dataset.moveLesson, button.dataset.direction))
   );
   document.querySelectorAll('[data-role-user]').forEach(select =>
     select.addEventListener('change', () => updateUserRole(select.dataset.roleUser, select.value))
@@ -3024,6 +3099,122 @@ async function createModule(event) {
   renderAdmin();
 }
 
+function findManagedModule(moduleId) {
+  for (const course of state.courses || []) {
+    const module = (course.modules || []).find(item => item.id === moduleId);
+    if (module) return { course, module };
+  }
+  return null;
+}
+
+function findManagedLesson(lessonId) {
+  for (const course of state.courses || []) {
+    for (const module of course.modules || []) {
+      const lesson = (module.lessons || []).find(item => item.id === lessonId);
+      if (lesson) return { course, module, lesson };
+    }
+  }
+  return null;
+}
+
+async function refreshAdminAfterChange(message) {
+  showToast(message, 'success');
+  await loadApplicationData();
+  renderAdmin();
+  setTimeout(() => document.querySelector('#course-structure-manager')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+}
+
+async function editModule(moduleId) {
+  const found = findManagedModule(moduleId);
+  if (!found) return;
+  const title = prompt('Nuevo nombre del módulo:', found.module.title);
+  if (title === null) return;
+  const cleanTitle = title.trim();
+  if (!cleanTitle) return showToast('El título no puede quedar vacío.', 'error');
+  const { error } = await db.from('modules').update({ title: cleanTitle }).eq('id', moduleId);
+  if (error) return showToast(error.message, 'error');
+  await refreshAdminAfterChange('Módulo actualizado.');
+}
+
+async function deleteModule(moduleId) {
+  const found = findManagedModule(moduleId);
+  if (!found) return;
+  const lessonCount = found.module.lessons?.length || 0;
+  const message = lessonCount
+    ? `¿Eliminar el módulo “${found.module.title}” y sus ${lessonCount} lecciones? Esta acción no se puede deshacer.`
+    : `¿Eliminar el módulo “${found.module.title}”?`;
+  if (!confirm(message)) return;
+  const { error } = await db.from('modules').delete().eq('id', moduleId);
+  if (error) return showToast(error.message, 'error');
+  await refreshAdminAfterChange('Módulo eliminado.');
+}
+
+async function moveModule(moduleId, direction) {
+  const found = findManagedModule(moduleId);
+  if (!found) return;
+  const ordered = [...(found.course.modules || [])].sort((a, b) => (a.position || 0) - (b.position || 0));
+  const index = ordered.findIndex(item => item.id === moduleId);
+  const targetIndex = direction === 'up' ? index - 1 : index + 1;
+  if (index < 0 || targetIndex < 0 || targetIndex >= ordered.length) return;
+  const current = ordered[index];
+  const target = ordered[targetIndex];
+  const currentPosition = Number(current.position) || index + 1;
+  const targetPosition = Number(target.position) || targetIndex + 1;
+  const first = await db.from('modules').update({ position: targetPosition }).eq('id', current.id);
+  if (first.error) return showToast(first.error.message, 'error');
+  const second = await db.from('modules').update({ position: currentPosition }).eq('id', target.id);
+  if (second.error) return showToast(second.error.message, 'error');
+  await refreshAdminAfterChange('Orden de módulos actualizado.');
+}
+
+async function editLesson(lessonId) {
+  const found = findManagedLesson(lessonId);
+  if (!found) return;
+  const title = prompt('Nuevo título de la lección:', found.lesson.title);
+  if (title === null) return;
+  const cleanTitle = title.trim();
+  if (!cleanTitle) return showToast('El título no puede quedar vacío.', 'error');
+  const durationInput = prompt('Duración en minutos:', String(Number(found.lesson.duration_minutes) || 0));
+  if (durationInput === null) return;
+  const duration = Math.max(0, Number(durationInput) || 0);
+  const videoUrl = prompt('URL del video (puede quedar vacía):', found.lesson.video_url || '');
+  if (videoUrl === null) return;
+  const { error } = await db.from('lessons').update({
+    title: cleanTitle,
+    duration_minutes: duration,
+    video_url: videoUrl.trim() || null
+  }).eq('id', lessonId);
+  if (error) return showToast(error.message, 'error');
+  await refreshAdminAfterChange('Lección actualizada.');
+}
+
+async function deleteLesson(lessonId) {
+  const found = findManagedLesson(lessonId);
+  if (!found) return;
+  if (!confirm(`¿Eliminar la lección “${found.lesson.title}”? Esta acción no se puede deshacer.`)) return;
+  const { error } = await db.from('lessons').delete().eq('id', lessonId);
+  if (error) return showToast(error.message, 'error');
+  await refreshAdminAfterChange('Lección eliminada.');
+}
+
+async function moveLesson(lessonId, direction) {
+  const found = findManagedLesson(lessonId);
+  if (!found) return;
+  const ordered = [...(found.module.lessons || [])].sort((a, b) => (a.position || 0) - (b.position || 0));
+  const index = ordered.findIndex(item => item.id === lessonId);
+  const targetIndex = direction === 'up' ? index - 1 : index + 1;
+  if (index < 0 || targetIndex < 0 || targetIndex >= ordered.length) return;
+  const current = ordered[index];
+  const target = ordered[targetIndex];
+  const currentPosition = Number(current.position) || index + 1;
+  const targetPosition = Number(target.position) || targetIndex + 1;
+  const first = await db.from('lessons').update({ position: targetPosition }).eq('id', current.id);
+  if (first.error) return showToast(first.error.message, 'error');
+  const second = await db.from('lessons').update({ position: currentPosition }).eq('id', target.id);
+  if (second.error) return showToast(second.error.message, 'error');
+  await refreshAdminAfterChange('Orden de lecciones actualizado.');
+}
+
 async function createLesson(event) {
   event.preventDefault();
   const form = new FormData(event.currentTarget);
@@ -3041,7 +3232,10 @@ async function createLesson(event) {
     video_url: String(form.get('videoUrl')).trim() || null,
     duration_minutes: Number(form.get('duration')) || 0,
     lesson_type: 'video',
-    position: 1
+    position: (() => {
+      const found = findManagedModule(moduleId);
+      return (found?.module?.lessons?.length || 0) + 1;
+    })()
   });
 
   setFormBusy(event.currentTarget, false);
