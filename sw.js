@@ -1,4 +1,4 @@
-const CACHE = 'aula-compas-v6.0.14-0-9-media-delete';
+const CACHE = 'aula-compas-v6.0.15-0-9-media-delete';
 const STATIC_ASSETS = [
   './',
   './index.html',

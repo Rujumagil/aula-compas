@@ -45,6 +45,12 @@ const state = {
   enrollments: [],
   workspaces: [],
   workspaceMembers: [],
+  products: [],
+  productContents: [],
+  studentAccess: [],
+  accessHistory: [],
+  orders: [],
+  resourceAccess: [],
   activeWorkspaceId: null,
   recoveryMode: false,
   loading: true
@@ -273,7 +279,7 @@ async function init() {
   }
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js?v=6.0.11', { updateViaCache: 'none' })
+    navigator.serviceWorker.register('sw.js?v=6.0.15', { updateViaCache: 'none' })
       .then(registration => registration.update())
       .catch(console.error);
   }
@@ -288,6 +294,12 @@ function clearUserData() {
   state.enrollments = [];
   state.workspaces = [];
   state.workspaceMembers = [];
+  state.products = [];
+  state.productContents = [];
+  state.studentAccess = [];
+  state.accessHistory = [];
+  state.orders = [];
+  state.resourceAccess = [];
   state.activeWorkspaceId = null;
 }
 
@@ -392,14 +404,37 @@ async function loadApplicationData() {
   state.resources = resourcesResult.data || [];
 
   if (isAdmin()) {
-    const [profilesResult, enrollmentsResult] = await Promise.all([
+    const [
+      profilesResult, enrollmentsResult, productsResult, productContentsResult,
+      studentAccessResult, accessHistoryResult, ordersResult, resourceAccessResult
+    ] = await Promise.all([
       db.from('profiles').select('id,email,full_name,avatar_url,role,created_at').order('created_at', { ascending: false }),
-      db.from('enrollments').select('*').order('enrolled_at', { ascending: false })
+      db.from('enrollments').select('*').order('enrolled_at', { ascending: false }),
+      db.from('products').select('*').order('created_at', { ascending: false }),
+      db.from('product_contents').select('*').order('created_at', { ascending: true }),
+      db.from('student_access').select('*').order('granted_at', { ascending: false }),
+      db.from('access_history').select('*').order('created_at', { ascending: false }).limit(250),
+      db.from('orders').select('*').order('created_at', { ascending: false }).limit(250),
+      db.from('resource_access').select('*').order('granted_at', { ascending: false })
     ]);
-    if (profilesResult.error) console.error('Profiles error:', profilesResult.error);
-    if (enrollmentsResult.error) console.error('Enrollments error:', enrollmentsResult.error);
+
+    [
+      ['Profiles', profilesResult], ['Enrollments', enrollmentsResult],
+      ['Products', productsResult], ['Product contents', productContentsResult],
+      ['Student access', studentAccessResult], ['Access history', accessHistoryResult],
+      ['Orders', ordersResult], ['Resource access', resourceAccessResult]
+    ].forEach(([label, result]) => {
+      if (result.error) console.error(`${label} error:`, result.error);
+    });
+
     state.profiles = profilesResult.data || [];
     state.enrollments = enrollmentsResult.data || [];
+    state.products = productsResult.data || [];
+    state.productContents = productContentsResult.data || [];
+    state.studentAccess = studentAccessResult.data || [];
+    state.accessHistory = accessHistoryResult.data || [];
+    state.orders = ordersResult.data || [];
+    state.resourceAccess = resourceAccessResult.data || [];
   }
 
   state.loading = false;
@@ -3008,7 +3043,7 @@ function renderWorkspaceAdmin(workspaceId) {
     <nav class="workspace-admin-tabs" aria-label="Secciones administrativas">
       <a href="#admin-courses">Cursos</a>
       <a href="#admin-resources">Biblioteca y recursos</a>
-      ${isAdmin() ? '<a href="#admin-users">Alumnos y accesos</a>' : ''}
+      ${isAdmin() ? '<a href="#access-center">Accesos y ventas</a><a href="#admin-users">Alumnos</a>' : ''}
       <a href="#create-course-panel">Crear contenido</a>
     </nav>
 
@@ -3040,7 +3075,7 @@ function renderWorkspaceAdmin(workspaceId) {
         <button type="button" data-admin-scroll="create-course-panel"><span>＋</span>Crear curso</button>
         <button type="button" data-admin-scroll="admin-content"><span>▤</span>Agregar contenido</button>
         <button type="button" data-admin-scroll="admin-resources"><span>▧</span>Subir recurso</button>
-        ${isAdmin() ? '<button type="button" data-admin-scroll="admin-users"><span>◎</span>Gestionar usuarios</button>' : ''}
+        ${isAdmin() ? '<button type="button" data-admin-scroll="access-center"><span>◆</span>Accesos y ventas</button><button type="button" data-admin-scroll="admin-users"><span>◎</span>Gestionar usuarios</button>' : ''}
       </div>
     </section>
 
@@ -3218,6 +3253,9 @@ function renderWorkspaceAdmin(workspaceId) {
       </div>
     </section>
 
+
+    ${isAdmin() ? renderAccessCenterMarkup(workspace, managedCourses, managedResources, studentOptions) : ''}
+
     ${isAdmin() ? `<section class="settings-card glass instructor-content-panel" id="admin-users">
       <div class="section-heading"><div><span class="eyebrow">Comunidad</span><h2>Usuarios e inscripciones</h2></div></div>
       <div class="admin-table-wrap"><table class="admin-table">
@@ -3234,6 +3272,18 @@ function renderWorkspaceAdmin(workspaceId) {
   document.querySelector('#lesson-form')?.addEventListener('submit', createLesson);
   document.querySelector('#resource-form')?.addEventListener('submit', createResource);
   document.querySelector('#enrollment-form')?.addEventListener('submit', assignCourse);
+  document.querySelector('#product-form')?.addEventListener('submit', createProduct);
+  document.querySelector('#manual-access-form')?.addEventListener('submit', grantProductAccess);
+  document.querySelectorAll('[data-product-toggle]').forEach(button =>
+    button.addEventListener('click', () => toggleProductStatus(button.dataset.productToggle, button.dataset.nextStatus))
+  );
+  document.querySelectorAll('[data-product-delete]').forEach(button =>
+    button.addEventListener('click', () => deleteProduct(button.dataset.productDelete))
+  );
+  document.querySelectorAll('[data-access-status]').forEach(button =>
+    button.addEventListener('click', () => changeStudentAccessStatus(button.dataset.accessStatus, button.dataset.nextStatus))
+  );
+  document.querySelector('#access-search')?.addEventListener('input', filterAccessRows);
   document.querySelectorAll('[data-course-status]').forEach(button =>
     button.addEventListener('click', () => setCourseStatus(button.dataset.courseStatus, button.dataset.nextStatus))
   );
@@ -3285,6 +3335,200 @@ function renderWorkspaceAdmin(workspaceId) {
       }
     })
   );
+}
+
+
+function productTypeLabel(type) {
+  return ({course:'Curso',book:'Libro digital',manual:'Manual',webinar:'Webinar',bundle:'Paquete',membership:'Membresía',free:'Acceso gratuito'})[type] || 'Producto';
+}
+function accessStatusLabel(status) {
+  return ({active:'Activo',suspended:'Suspendido',revoked:'Revocado',expired:'Vencido'})[status] || status || 'Sin estado';
+}
+function workspaceProducts(workspaceId) {
+  return (state.products || []).filter(product => product.workspace_id === workspaceId);
+}
+function productContentSummary(productId, courses, resources) {
+  const labels = (state.productContents || []).filter(row => row.product_id === productId).map(row => {
+    if (row.content_type === 'course') return courses.find(item => item.id === row.course_id)?.title || 'Curso';
+    if (row.content_type === 'resource') return resources.find(item => item.id === row.resource_id)?.title || 'Recurso';
+    return row.event_title || 'Evento';
+  });
+  return labels.length ? labels.join(' · ') : 'Sin contenidos vinculados';
+}
+function renderAccessCenterMarkup(workspace, courses, resources, studentOptions) {
+  const workspaceId = workspace.id === 'general' ? (state.workspaces[0]?.id || '') : workspace.id;
+  const products = workspaceProducts(workspaceId);
+  const productIds = new Set(products.map(item => item.id));
+  const accesses = (state.studentAccess || []).filter(item => productIds.has(item.product_id));
+  const productOptions = products.filter(item => item.status === 'active')
+    .map(item => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.name)}</option>`).join('');
+  const profile = id => state.profiles.find(item => item.id === id);
+  const product = id => products.find(item => item.id === id);
+
+  return `
+  <section class="access-center" id="access-center">
+    <div class="access-center-heading">
+      <div><span class="eyebrow">Control comercial</span><h2>Accesos y ventas</h2>
+      <p>Agrupa cursos, libros y webinars en productos; concede, suspende o revoca accesos sin borrar el progreso.</p></div>
+      <span class="access-center-badge">Preparado para Mercado Pago</span>
+    </div>
+
+    <section class="access-summary-grid">
+      <article><span>◆</span><div><strong>${products.length}</strong><small>Productos</small></div></article>
+      <article><span>✓</span><div><strong>${accesses.filter(x => x.status === 'active').length}</strong><small>Activos</small></div></article>
+      <article><span>Ⅱ</span><div><strong>${accesses.filter(x => x.status === 'suspended').length}</strong><small>Suspendidos</small></div></article>
+      <article><span>＄</span><div><strong>${(state.orders || []).filter(x => productIds.has(x.product_id)).length}</strong><small>Órdenes</small></div></article>
+    </section>
+
+    <div class="access-management-grid">
+      <article class="settings-card glass">
+        <div class="builder-step"><span>1</span><div><strong>Crear producto</strong><small>Selecciona todo lo que recibirá el alumno.</small></div></div>
+        <form id="product-form" class="stack-form">
+          <input type="hidden" name="workspaceId" value="${escapeHtml(workspaceId)}">
+          <div class="field"><label>Nombre</label><input name="name" placeholder="Curso + libro El Compás del Estratega" required></div>
+          <div class="form-two-columns">
+            <div class="field"><label>Tipo</label><select name="productType">
+              <option value="course">Solo curso</option><option value="book">Solo libro</option>
+              <option value="manual">Manual</option><option value="webinar">Webinar</option>
+              <option value="bundle" selected>Paquete</option><option value="free">Gratuito</option>
+            </select></div>
+            <div class="field"><label>Precio MXN</label><input name="price" type="number" min="0" step="0.01" value="0"></div>
+          </div>
+          <div class="field"><label>Descripción</label><textarea name="description" rows="3"></textarea></div>
+          <div class="field"><label>Referencia comercial</label><input name="externalReference" placeholder="compas-estratega-paquete"></div>
+          <div class="field"><label>Enlace de pago</label><input name="paymentUrl" type="url" placeholder="https://mpago.la/..."></div>
+          <fieldset class="access-content-selector"><legend>Contenido incluido</legend>
+            <div class="access-selector-group"><strong>Cursos</strong>
+              ${courses.length ? courses.map(item => `<label><input type="checkbox" name="courseIds" value="${escapeHtml(item.id)}"><span>${escapeHtml(item.title)}</span></label>`).join('') : '<small>No hay cursos.</small>'}
+            </div>
+            <div class="access-selector-group"><strong>Libros y recursos</strong>
+              ${resources.length ? resources.map(item => `<label><input type="checkbox" name="resourceIds" value="${escapeHtml(item.id)}"><span>${escapeHtml(item.title)}</span></label>`).join('') : '<small>No hay recursos.</small>'}
+            </div>
+            <label class="access-event-toggle"><input type="checkbox" name="includeEvent"><span>Incluir webinar</span></label>
+            <div class="form-two-columns">
+              <div class="field"><label>Evento</label><input name="eventTitle" placeholder="Webinar en vivo"></div>
+              <div class="field"><label>Fecha</label><input name="eventDate" type="datetime-local"></div>
+            </div>
+          </fieldset>
+          <button class="btn btn-primary">Crear producto</button>
+        </form>
+      </article>
+
+      <article class="settings-card glass">
+        <div class="builder-step"><span>2</span><div><strong>Conceder acceso</strong><small>Asigna un producto a una cuenta registrada.</small></div></div>
+        <form id="manual-access-form" class="stack-form">
+          <div class="field"><label>Alumno</label><select name="userId" required>${studentOptions || '<option value="">No hay alumnos</option>'}</select></div>
+          <div class="field"><label>Producto</label><select name="productId" required>${productOptions || '<option value="">Primero crea un producto</option>'}</select></div>
+          <div class="form-two-columns">
+            <div class="field"><label>Origen</label><select name="source"><option value="manual">Manual</option><option value="mercado_pago">Mercado Pago</option><option value="gift">Cortesía</option></select></div>
+            <div class="field"><label>Vencimiento</label><input name="expiresAt" type="datetime-local"></div>
+          </div>
+          <div class="field"><label>Referencia</label><input name="reference" placeholder="Folio o comprobante"></div>
+          <button class="btn btn-primary" ${!studentOptions || !productOptions ? 'disabled' : ''}>Conceder acceso</button>
+        </form>
+      </article>
+    </div>
+
+    <section class="settings-card glass access-products-panel">
+      <div class="section-heading"><div><span class="eyebrow">Catálogo interno</span><h2>Productos</h2></div><span class="section-count">${products.length}</span></div>
+      <div class="access-product-grid">
+        ${products.length ? products.map(item => `
+          <article class="access-product-card">
+            <div class="access-product-top"><span class="status-pill ${item.status === 'active' ? 'available' : ''}">${item.status === 'active' ? 'Activo' : 'Inactivo'}</span><span>${escapeHtml(productTypeLabel(item.product_type))}</span></div>
+            <h3>${escapeHtml(item.name)}</h3><p>${escapeHtml(item.description || '')}</p>
+            <div class="access-product-price"><strong>${Number(item.price || 0).toLocaleString('es-MX',{style:'currency',currency:'MXN'})}</strong><small>${escapeHtml(item.external_reference)}</small></div>
+            <div class="access-product-content">${escapeHtml(productContentSummary(item.id, courses, resources))}</div>
+            <div class="instructor-course-actions">
+              ${item.payment_url ? `<a class="btn btn-secondary" href="${escapeHtml(item.payment_url)}" target="_blank" rel="noopener">Pago</a>` : ''}
+              <button class="btn btn-secondary" data-product-toggle="${escapeHtml(item.id)}" data-next-status="${item.status === 'active' ? 'inactive' : 'active'}">${item.status === 'active' ? 'Desactivar' : 'Activar'}</button>
+              <button class="btn btn-danger" data-product-delete="${escapeHtml(item.id)}">Eliminar</button>
+            </div>
+          </article>`).join('') : '<div class="instructor-empty-state"><h3>Aún no hay productos</h3></div>'}
+      </div>
+    </section>
+
+    <section class="settings-card glass access-students-panel">
+      <div class="section-heading"><div><span class="eyebrow">Alumnos autorizados</span><h2>Accesos concedidos</h2></div><input id="access-search" class="access-search" placeholder="Buscar"></div>
+      <div class="admin-table-wrap"><table class="admin-table access-table">
+        <thead><tr><th>Alumno</th><th>Producto</th><th>Origen</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody>${accesses.length ? accesses.map(item => {
+          const person = profile(item.user_id), prod = product(item.product_id);
+          const search = `${person?.full_name || ''} ${person?.email || ''} ${prod?.name || ''}`.toLowerCase();
+          return `<tr data-access-row data-search="${escapeHtml(search)}">
+            <td><strong>${escapeHtml(person?.full_name || 'Sin nombre')}</strong><small>${escapeHtml(person?.email || '')}</small></td>
+            <td>${escapeHtml(prod?.name || 'Producto')}</td><td>${escapeHtml(item.source)}</td>
+            <td><span class="status-pill access-${escapeHtml(item.status)}">${escapeHtml(accessStatusLabel(item.status))}</span></td>
+            <td class="access-actions">
+              ${item.status === 'active' ? `<button class="btn btn-secondary" data-access-status="${item.id}" data-next-status="suspended">Suspender</button>` : ''}
+              ${item.status === 'suspended' ? `<button class="btn btn-primary" data-access-status="${item.id}" data-next-status="active">Reactivar</button>` : ''}
+              ${item.status !== 'revoked' ? `<button class="btn btn-danger" data-access-status="${item.id}" data-next-status="revoked">Revocar</button>` : ''}
+            </td></tr>`;
+        }).join('') : '<tr><td colspan="5">No hay accesos concedidos.</td></tr>'}</tbody>
+      </table></div>
+    </section>
+  </section>`;
+}
+function filterAccessRows(event) {
+  const term = String(event.target.value || '').trim().toLowerCase();
+  document.querySelectorAll('[data-access-row]').forEach(row => row.classList.toggle('hide', term && !row.dataset.search.includes(term)));
+}
+async function createProduct(event) {
+  event.preventDefault();
+  const formElement = event.currentTarget, form = new FormData(formElement);
+  setFormBusy(formElement, true);
+  try {
+    const name = String(form.get('name')).trim();
+    const reference = String(form.get('externalReference') || '').trim() || `${slugify(name)}-${Date.now().toString().slice(-6)}`;
+    const { data: product, error } = await db.from('products').insert({
+      workspace_id: form.get('workspaceId'), name, slug:`${slugify(name)}-${Date.now().toString().slice(-5)}`,
+      product_type: form.get('productType'), description:String(form.get('description') || '').trim() || null,
+      price:Number(form.get('price') || 0), currency:'MXN', status:'active',
+      external_reference:reference, payment_url:String(form.get('paymentUrl') || '').trim() || null,
+      created_by:state.user.id
+    }).select().single();
+    if (error) throw error;
+    const contents = [];
+    form.getAll('courseIds').forEach(id => contents.push({product_id:product.id,content_type:'course',course_id:id}));
+    form.getAll('resourceIds').forEach(id => contents.push({product_id:product.id,content_type:'resource',resource_id:id}));
+    if (form.get('includeEvent') === 'on') contents.push({product_id:product.id,content_type:'event',event_title:String(form.get('eventTitle') || '').trim() || 'Evento',event_date:form.get('eventDate') || null});
+    if (!contents.length) throw new Error('Selecciona al menos un contenido.');
+    const { error: contentError } = await db.from('product_contents').insert(contents);
+    if (contentError) throw contentError;
+    showToast('Producto creado.', 'success'); await loadApplicationData(); renderWorkspaceAdmin(state.activeWorkspaceId);
+  } catch (error) { console.error(error); showToast(error.message || 'No se pudo crear.', 'error'); }
+  finally { setFormBusy(formElement, false); }
+}
+async function toggleProductStatus(id, status) {
+  const { error } = await db.from('products').update({status,updated_at:new Date().toISOString()}).eq('id',id);
+  if (error) return showToast(error.message,'error');
+  await loadApplicationData(); renderWorkspaceAdmin(state.activeWorkspaceId);
+}
+async function deleteProduct(id) {
+  if ((state.studentAccess || []).some(x => x.product_id === id && x.status === 'active')) return showToast('Revoca los accesos activos antes de eliminar.','error');
+  if (!confirm('¿Eliminar este producto?')) return;
+  const { error } = await db.from('products').delete().eq('id',id);
+  if (error) return showToast(error.message,'error');
+  await loadApplicationData(); renderWorkspaceAdmin(state.activeWorkspaceId);
+}
+async function grantProductAccess(event) {
+  event.preventDefault();
+  const formElement = event.currentTarget, form = new FormData(formElement);
+  setFormBusy(formElement,true);
+  const { error } = await db.rpc('admin_grant_product_access',{
+    target_user:form.get('userId'), target_product:form.get('productId'),
+    access_source:form.get('source') || 'manual',
+    access_reference:String(form.get('reference') || '').trim() || null,
+    access_expires_at:form.get('expiresAt') || null
+  });
+  setFormBusy(formElement,false);
+  if (error) return showToast(error.message,'error');
+  showToast('Acceso concedido.','success'); await loadApplicationData(); renderWorkspaceAdmin(state.activeWorkspaceId);
+}
+async function changeStudentAccessStatus(id,status) {
+  if (!confirm(`¿Cambiar el acceso a ${accessStatusLabel(status)}?`)) return;
+  const { error } = await db.rpc('admin_change_student_access_status',{target_access:id,new_status:status});
+  if (error) return showToast(error.message,'error');
+  await loadApplicationData(); renderWorkspaceAdmin(state.activeWorkspaceId);
 }
 
 async function createCourse(event) {
