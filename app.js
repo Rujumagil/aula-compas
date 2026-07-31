@@ -1688,53 +1688,210 @@ async function openResource(resourceId) {
 
 function renderAgenda() {
   const page = document.querySelector('#page');
-  const now = Date.now();
+  const now = new Date();
+  const sortedEvents = [...ACADEMY_EVENTS].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const upcomingEvents = sortedEvents.filter(event => new Date(event.date) >= now);
+  const pastEvents = sortedEvents.filter(event => new Date(event.date) < now);
+  const nextEvent = upcomingEvents[0] || null;
+
+  const calendarBase = nextEvent ? new Date(nextEvent.date) : (sortedEvents[0] ? new Date(sortedEvents[0].date) : now);
+  const calendarYear = calendarBase.getFullYear();
+  const calendarMonth = calendarBase.getMonth();
+  const monthName = calendarBase.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' });
+  const firstWeekday = (new Date(calendarYear, calendarMonth, 1).getDay() + 6) % 7;
+  const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+  const eventDays = new Set(
+    sortedEvents
+      .map(event => new Date(event.date))
+      .filter(date => date.getFullYear() === calendarYear && date.getMonth() === calendarMonth)
+      .map(date => date.getDate())
+  );
+
+  const formatEventDate = dateValue => {
+    const date = new Date(dateValue);
+    return {
+      day: date.toLocaleDateString('es-MX', { day: '2-digit' }),
+      month: date.toLocaleDateString('es-MX', { month: 'short' }).replace('.', '').toUpperCase(),
+      full: date.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
+      time: date.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' })
+    };
+  };
+
+  const renderEventCard = event => {
+    const date = new Date(event.date);
+    const dateInfo = formatEventDate(event.date);
+    const past = date < now;
+
+    return `
+      <article class="calendar-event-card glass ${past ? 'is-past' : ''}" data-calendar-event="${past ? 'past' : 'upcoming'}">
+        <div class="calendar-event-date">
+          <strong>${dateInfo.day}</strong>
+          <span>${dateInfo.month}</span>
+        </div>
+
+        <div class="calendar-event-content">
+          <div class="calendar-event-topline">
+            <span class="calendar-status ${past ? 'completed' : 'live'}">${escapeHtml(past ? 'Finalizado' : event.type)}</span>
+            <span>${escapeHtml(dateInfo.time)} · Hora de Guadalajara</span>
+          </div>
+          <h3>${escapeHtml(event.title)}</h3>
+          <p>${escapeHtml(event.description)}</p>
+          <div class="calendar-event-meta">
+            <span>◷ 60 minutos</span>
+            <span>⌖ En línea</span>
+            <span>◉ Zoom</span>
+          </div>
+        </div>
+
+        <div class="calendar-event-action">
+          <small>${escapeHtml(dateInfo.full)}</small>
+          <a class="btn ${past ? 'btn-secondary' : 'btn-primary'}" href="${whatsappUrl(`Hola, necesito ayuda con el acceso al evento: ${event.title}.`)}" target="_blank" rel="noopener">
+            ${past ? 'Solicitar grabación' : 'Solicitar acceso'}
+          </a>
+        </div>
+      </article>`;
+  };
 
   page.innerHTML = `
-    <span class="eyebrow">Mi calendario</span>
-    <h1 class="page-title">Calendario</h1>
-    <p class="page-subtitle">Consulta lanzamientos, webinars y próximas sesiones de tus programas.</p>
+    <section class="calendar-page-heading">
+      <div>
+        <span class="eyebrow">Mi calendario</span>
+        <h1 class="page-title">Próximos encuentros</h1>
+        <p class="page-subtitle">Consulta webinars, lanzamientos y sesiones disponibles dentro de tus programas.</p>
+      </div>
+      <div class="calendar-heading-summary">
+        <article><strong>${upcomingEvents.length}</strong><span>Próximos</span></article>
+        <article><strong>${pastEvents.length}</strong><span>Finalizados</span></article>
+      </div>
+    </section>
 
-    <section class="agenda-layout">
-      <div class="agenda-list">
-        ${ACADEMY_EVENTS.map(event => {
-          const past = new Date(event.date).getTime() < now;
-          return `
-            <article class="agenda-event glass ${past ? 'past' : ''}">
-              <div class="agenda-date"><strong>${event.day}</strong><span>${event.month}</span></div>
-              <div class="agenda-event-body">
-                <div><span class="badge">${escapeHtml(past ? 'Finalizado' : event.type)}</span><span class="agenda-time">7:00 p. m. · Hora de Guadalajara</span></div>
-                <h2>${escapeHtml(event.title)}</h2>
-                <p>${escapeHtml(event.description)}</p>
-                <div class="event-meta"><span>◷ 60 minutos</span><span>⌖ En línea por Zoom</span></div>
-              </div>
-              <div class="agenda-access">
-                <strong>${past ? 'Consulta la grabación' : 'Acceso para inscritos'}</strong>
-                <small>${past ? 'Si forma parte de tu compra, aparecerá en tus recursos.' : 'El enlace se compartirá con las cuentas autorizadas.'}</small>
-                <a class="btn btn-secondary" href="${whatsappUrl(`Hola, necesito ayuda con el acceso al evento: ${event.title}.`)}" target="_blank" rel="noopener">Solicitar ayuda</a>
-              </div>
-            </article>`;
-        }).join('')}
+    ${nextEvent ? (() => {
+      const info = formatEventDate(nextEvent.date);
+      return `
+        <section class="calendar-featured-event">
+          <div class="calendar-featured-copy">
+            <span class="eyebrow">Siguiente evento</span>
+            <h2>${escapeHtml(nextEvent.title)}</h2>
+            <p>${escapeHtml(nextEvent.description)}</p>
+            <div class="calendar-featured-meta">
+              <span>▣ ${escapeHtml(info.full)}</span>
+              <span>◷ ${escapeHtml(info.time)}</span>
+              <span>⌖ Guadalajara, México</span>
+            </div>
+            <div class="calendar-featured-actions">
+              <a class="btn btn-primary" href="${whatsappUrl(`Hola, quiero confirmar mi acceso al evento: ${nextEvent.title}.`)}" target="_blank" rel="noopener">Confirmar mi acceso</a>
+              <button class="btn btn-secondary" type="button" id="copy-next-event">Copiar fecha</button>
+            </div>
+          </div>
+          <div class="calendar-featured-date">
+            <span>${escapeHtml(info.month)}</span>
+            <strong>${escapeHtml(info.day)}</strong>
+            <small>${calendarYear}</small>
+          </div>
+        </section>`;
+    })() : `
+      <section class="calendar-empty-feature glass">
+        <span class="calendar-empty-icon">◷</span>
+        <h2>No tienes eventos próximos</h2>
+        <p>Cuando se programe una nueva sesión aparecerá aquí automáticamente.</p>
+      </section>`}
+
+    <section class="calendar-layout">
+      <div class="calendar-events-panel">
+        <div class="calendar-toolbar glass">
+          <div>
+            <span class="eyebrow">Agenda</span>
+            <h2>Todos los eventos</h2>
+          </div>
+          <div class="calendar-filter-tabs" role="tablist" aria-label="Filtrar eventos">
+            <button class="calendar-filter active" type="button" data-calendar-filter="all">Todos</button>
+            <button class="calendar-filter" type="button" data-calendar-filter="upcoming">Próximos</button>
+            <button class="calendar-filter" type="button" data-calendar-filter="past">Finalizados</button>
+          </div>
+        </div>
+
+        <div class="calendar-event-list" id="calendar-event-list">
+          ${sortedEvents.length ? sortedEvents.map(renderEventCard).join('') : `
+            <article class="calendar-empty-list glass">
+              <span>▣</span>
+              <h3>Aún no hay eventos registrados</h3>
+              <p>Las nuevas fechas de cursos y webinars aparecerán en esta sección.</p>
+            </article>`}
+        </div>
+
+        <article class="calendar-no-results glass hide" id="calendar-no-results">
+          <h3>No hay eventos en esta categoría</h3>
+          <p>Selecciona otro filtro para consultar el resto de la agenda.</p>
+        </article>
       </div>
 
-      <aside class="agenda-side">
-        <article class="calendar-card">
-          <span class="eyebrow">Agosto 2026</span>
-          <h2>Fechas importantes</h2>
-          <div class="mini-calendar">
+      <aside class="calendar-sidebar">
+        <article class="calendar-month-card glass">
+          <div class="calendar-month-heading">
+            <div>
+              <span class="eyebrow">Vista mensual</span>
+              <h2>${escapeHtml(monthName.charAt(0).toUpperCase() + monthName.slice(1))}</h2>
+            </div>
+            <span class="calendar-month-count">${eventDays.size} ${eventDays.size === 1 ? 'fecha' : 'fechas'}</span>
+          </div>
+
+          <div class="calendar-grid" aria-label="Calendario de ${escapeHtml(monthName)}">
             ${['L','M','M','J','V','S','D'].map(day => `<small>${day}</small>`).join('')}
-            ${Array.from({ length: 31 }, (_, index) => {
+            ${Array.from({ length: firstWeekday }, () => '<span class="calendar-day empty"></span>').join('')}
+            ${Array.from({ length: daysInMonth }, (_, index) => {
               const day = index + 1;
-              return `<span class="${[3, 8].includes(day) ? 'event-day' : ''}">${day}</span>`;
+              const isToday = now.getFullYear() === calendarYear && now.getMonth() === calendarMonth && now.getDate() === day;
+              const hasEvent = eventDays.has(day);
+              return `<span class="calendar-day ${hasEvent ? 'has-event' : ''} ${isToday ? 'is-today' : ''}">${day}</span>`;
             }).join('')}
           </div>
+          <div class="calendar-legend"><span><i></i> Evento programado</span></div>
         </article>
-        <article class="timezone-note glass">
-          <strong>Zona horaria</strong>
-          <p>Todos los horarios se muestran en la hora de Guadalajara, México.</p>
+
+        <article class="calendar-info-card glass">
+          <span class="calendar-info-icon">◎</span>
+          <div>
+            <strong>Zona horaria</strong>
+            <p>Los horarios se muestran con la hora de Guadalajara, México.</p>
+          </div>
+        </article>
+
+        <article class="calendar-info-card glass">
+          <span class="calendar-info-icon">?</span>
+          <div>
+            <strong>¿Necesitas ayuda?</strong>
+            <p>Escríbenos si compraste un programa y todavía no recibes el enlace.</p>
+            <a href="${whatsappUrl('Hola, necesito ayuda con un evento de Aula Compás.')}" target="_blank" rel="noopener">Contactar soporte →</a>
+          </div>
         </article>
       </aside>
     </section>`;
+
+  document.querySelectorAll('[data-calendar-filter]').forEach(button => {
+    button.addEventListener('click', () => {
+      const filter = button.dataset.calendarFilter;
+      document.querySelectorAll('[data-calendar-filter]').forEach(item => item.classList.toggle('active', item === button));
+      let visible = 0;
+      document.querySelectorAll('[data-calendar-event]').forEach(card => {
+        const show = filter === 'all' || card.dataset.calendarEvent === filter;
+        card.classList.toggle('hide', !show);
+        if (show) visible += 1;
+      });
+      document.querySelector('#calendar-no-results')?.classList.toggle('hide', visible > 0 || sortedEvents.length === 0);
+    });
+  });
+
+  document.querySelector('#copy-next-event')?.addEventListener('click', async () => {
+    if (!nextEvent) return;
+    const info = formatEventDate(nextEvent.date);
+    const textToCopy = `${nextEvent.title} · ${info.full} · ${info.time} · Hora de Guadalajara`;
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      showToast('Fecha copiada correctamente.');
+    } catch {
+      showToast('No pudimos copiar la fecha.', 'error');
+    }
+  });
 }
 
 function renderHelp() {
