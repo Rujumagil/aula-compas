@@ -668,3 +668,76 @@ h1,h2,h3{font-family:Georgia,"Times New Roman",serif;font-weight:500}
 .nav-link-secondary .nav-icon {
   font-weight: 700;
 }
+
+/* FASE 1 · PASO 2 — MIS CURSOS PROFESIONAL */
+.courses-page-heading{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-bottom:22px}
+.courses-page-heading .page-subtitle{max-width:720px}
+.courses-overview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:22px}
+.courses-overview article{display:flex;align-items:center;gap:14px;padding:18px 20px;border:1px solid rgba(10,36,69,.08);border-radius:18px;background:rgba(255,255,255,.68);box-shadow:0 10px 28px rgba(31,53,75,.06)}
+.courses-overview article>span{display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:rgba(200,150,46,.11);color:#966c12;font-size:1.15rem}
+.courses-overview strong{display:block;font:600 1.5rem Georgia,serif;color:var(--navy)}
+.courses-overview small{color:var(--muted)}
+.continue-learning-panel{display:grid;grid-template-columns:minmax(260px,.75fr) 1.25fr;min-height:310px;border:1px solid rgba(200,150,46,.22);border-radius:26px;overflow:hidden;background:rgba(255,255,255,.76);box-shadow:var(--shadow);margin-bottom:34px}
+.continue-learning-image{position:relative;min-height:310px;overflow:hidden}
+.continue-learning-image img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.continue-learning-content{padding:34px 38px;display:flex;flex-direction:column;justify-content:center}
+.continue-learning-content h2{font-size:clamp(2rem,3.5vw,3.45rem);line-height:1;margin:8px 0 12px}
+.continue-learning-content p{color:#53647a;line-height:1.6;max-width:700px}
+.continue-progress-row{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;margin:22px 0}
+.continue-progress-row .learning-progress-track{height:9px}
+.continue-progress-row strong{font-size:.95rem;color:var(--navy)}
+.continue-learning-actions{display:flex;gap:12px;flex-wrap:wrap}
+.courses-list-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-top:4px}
+.courses-list-heading h2{margin:3px 0 0;font-size:2rem}
+.courses-list-heading>span{color:var(--muted);font-size:.86rem}
+.courses-filters{margin:16px 0 20px}
+.learning-course-list{display:grid;gap:18px}
+.learning-course-card{display:grid;grid-template-columns:270px minmax(0,1fr);min-height:245px;border:1px solid rgba(10,36,69,.09);border-radius:24px;overflow:hidden;background:rgba(255,255,255,.78);box-shadow:0 14px 38px rgba(31,53,75,.08);transition:transform .22s,border-color .22s,box-shadow .22s}
+.learning-course-card:hover{transform:translateY(-3px);border-color:rgba(200,150,46,.36);box-shadow:0 18px 44px rgba(31,53,75,.12)}
+.learning-course-cover{position:relative;min-height:245px;overflow:hidden;background:#eef1f5}
+.learning-course-cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .35s}
+.learning-course-card:hover .learning-course-cover img{transform:scale(1.025)}
+.learning-featured{position:absolute;top:16px;left:16px;padding:7px 11px;border-radius:999px;background:rgba(8,35,70,.90);color:white;font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.learning-course-body{padding:24px 27px;display:grid;gap:15px}
+.learning-course-topline{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.course-status{display:inline-flex;align-items:center;gap:7px;font-size:.75rem;font-weight:700}
+.course-status i{display:block;width:8px;height:8px;border-radius:50%}
+.course-status-progress{color:#8a6618}.course-status-progress i{background:#d4a42d}
+.course-status-new{color:#667386}.course-status-new i{background:#9aa4b2}
+.course-status-complete{color:#237353}.course-status-complete i{background:#38a273}
+.learning-course-category{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.learning-course-body h3{font-size:1.7rem;line-height:1.08;margin:0 0 7px}
+.learning-course-body h3 a{color:var(--navy)}
+.learning-course-body p{margin:0;color:#59697d;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.learning-progress-block{display:grid;gap:7px}
+.learning-progress-label{display:flex;justify-content:space-between;color:#667386;font-size:.78rem}
+.learning-progress-label strong{color:var(--navy)}
+.learning-progress-track{height:7px;border-radius:999px;background:rgba(10,36,69,.10);overflow:hidden}
+.learning-progress-track span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--gold),var(--gold-2))}
+.learning-course-details{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding-top:2px}
+.learning-course-details span{min-width:0}
+.learning-course-details small{display:block;color:var(--muted);font-size:.68rem;margin-bottom:3px}
+.learning-course-details strong{display:block;color:#32465e;font-size:.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.learning-course-actions{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:2px}
+.learning-primary-action{min-width:150px;text-align:center}
+.learning-outline-action{font-size:.82rem;font-weight:700;color:var(--navy);border-bottom:1px solid rgba(10,36,69,.25);padding-bottom:3px}
+.courses-empty{grid-column:1/-1}
+@media(max-width:900px){
+  .courses-page-heading{align-items:flex-start;flex-direction:column}
+  .courses-overview{grid-template-columns:1fr}
+  .continue-learning-panel{grid-template-columns:1fr}
+  .continue-learning-image{min-height:245px}
+  .learning-course-card{grid-template-columns:220px minmax(0,1fr)}
+  .learning-course-details{grid-template-columns:1fr 1fr}
+}
+@media(max-width:650px){
+  .continue-learning-content{padding:24px 20px}
+  .continue-learning-content h2{font-size:2rem}
+  .learning-course-card{grid-template-columns:1fr}
+  .learning-course-cover{min-height:215px}
+  .learning-course-body{padding:21px 18px}
+  .learning-course-details{grid-template-columns:1fr 1fr}
+  .learning-course-details span:last-child{grid-column:1/-1}
+  .learning-primary-action{flex:1}
+  .courses-list-heading{align-items:flex-start}
+}

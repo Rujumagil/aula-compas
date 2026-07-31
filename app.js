@@ -1086,6 +1086,55 @@ function renderHome() {
     </section>`;
 }
 
+function professionalCourseCard(course) {
+  const progress = courseProgress(course);
+  const lessons = allLessons(course);
+  const completed = lessons.filter(lesson => isLessonCompleted(lesson.id)).length;
+  const nextLesson = firstIncompleteLesson(course);
+  const statusClass = progress === 100 ? 'complete' : progress > 0 ? 'progress' : 'new';
+  const statusLabel = progress === 100 ? 'Finalizado' : progress > 0 ? 'En progreso' : 'No iniciado';
+  const actionLabel = progress === 100 ? 'Repasar curso' : progress > 0 ? 'Continuar' : 'Comenzar curso';
+  const actionUrl = nextLesson
+    ? `#lesson/${course.id}/${nextLesson.id}`
+    : `#course/${course.id}`;
+
+  return `
+    <article class="learning-course-card" data-course-progress="${progress}" data-course-category="${escapeHtml(course.category || '')}">
+      <a class="learning-course-cover" href="#course/${course.id}" aria-label="Abrir ${escapeHtml(course.title)}">
+        <img src="${escapeHtml(cover(course))}" alt="${escapeHtml(course.title)}" onerror="imageErrorFallback(event)">
+        ${course.featured ? '<span class="learning-featured">Destacado</span>' : ''}
+      </a>
+
+      <div class="learning-course-body">
+        <div class="learning-course-topline">
+          <span class="course-status course-status-${statusClass}"><i></i>${statusLabel}</span>
+          <span class="learning-course-category">${escapeHtml(course.category || 'Curso')}</span>
+        </div>
+
+        <div>
+          <h3><a href="#course/${course.id}">${escapeHtml(course.title)}</a></h3>
+          <p>${escapeHtml(course.subtitle || course.description || 'Continúa avanzando a tu propio ritmo.')}</p>
+        </div>
+
+        <div class="learning-progress-block">
+          <div class="learning-progress-label"><span>Tu avance</span><strong>${progress}%</strong></div>
+          <div class="learning-progress-track"><span style="width:${progress}%"></span></div>
+        </div>
+
+        <div class="learning-course-details">
+          <span><small>Contenido</small><strong>${completed}/${lessons.length} lecciones</strong></span>
+          ${course.duration_label ? `<span><small>Duración</small><strong>${escapeHtml(course.duration_label)}</strong></span>` : ''}
+          <span><small>Siguiente paso</small><strong>${nextLesson ? escapeHtml(nextLesson.title) : progress === 100 ? 'Curso completado' : 'Ver programa'}</strong></span>
+        </div>
+
+        <div class="learning-course-actions">
+          <a class="btn btn-primary learning-primary-action" href="${actionUrl}">${actionLabel}</a>
+          <a class="learning-outline-action" href="#course/${course.id}">Ver contenido</a>
+        </div>
+      </div>
+    </article>`;
+}
+
 function renderCourses() {
   const page = document.querySelector('#page');
 
@@ -1095,20 +1144,66 @@ function renderCourses() {
   }
 
   const categories = [...new Set(state.courses.map(course => course.category).filter(Boolean))];
+  const activeCourse = state.courses
+    .filter(course => courseProgress(course) < 100)
+    .sort((a, b) => courseProgress(b) - courseProgress(a))[0] || state.courses[0];
+  const activeProgress = courseProgress(activeCourse);
+  const activeNextLesson = firstIncompleteLesson(activeCourse);
+  const completedCourses = state.courses.filter(course => courseProgress(course) === 100).length;
+  const inProgressCourses = state.courses.filter(course => {
+    const value = courseProgress(course);
+    return value > 0 && value < 100;
+  }).length;
 
   page.innerHTML = `
-    <span class="eyebrow">Tu formación</span>
-    <h1 class="page-title">Mis cursos</h1>
-    <p class="page-subtitle">Programas, talleres y experiencias disponibles para tu cuenta.</p>
+    <section class="courses-page-heading">
+      <div>
+        <span class="eyebrow">Tu formación</span>
+        <h1 class="page-title">Mis cursos</h1>
+        <p class="page-subtitle">Retoma tu aprendizaje, revisa tu avance y accede a todos los programas asignados a tu cuenta.</p>
+      </div>
+      <a class="btn btn-secondary" href="#catalog">Explorar nuevos cursos</a>
+    </section>
 
-    <div class="filters">
+    <section class="courses-overview">
+      <article><span>▤</span><div><strong>${state.courses.length}</strong><small>Cursos disponibles</small></div></article>
+      <article><span>◔</span><div><strong>${inProgressCourses}</strong><small>En progreso</small></div></article>
+      <article><span>✓</span><div><strong>${completedCourses}</strong><small>Finalizados</small></div></article>
+    </section>
+
+    <section class="continue-learning-panel">
+      <div class="continue-learning-image">
+        <img src="${escapeHtml(cover(activeCourse))}" alt="${escapeHtml(activeCourse.title)}" onerror="imageErrorFallback(event)">
+      </div>
+      <div class="continue-learning-content">
+        <span class="eyebrow">Continuar aprendiendo</span>
+        <h2>${escapeHtml(activeCourse.title)}</h2>
+        <p>${escapeHtml(activeCourse.subtitle || activeCourse.description || '')}</p>
+        <div class="continue-progress-row">
+          <div class="learning-progress-track"><span style="width:${activeProgress}%"></span></div>
+          <strong>${activeProgress}%</strong>
+        </div>
+        <div class="continue-learning-actions">
+          <a class="btn btn-primary" href="${activeNextLesson ? `#lesson/${activeCourse.id}/${activeNextLesson.id}` : `#course/${activeCourse.id}`}">${activeProgress > 0 ? 'Continuar curso' : 'Comenzar curso'}</a>
+          <a class="btn btn-secondary" href="#course/${activeCourse.id}">Ver programa</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="courses-list-heading">
+      <div><span class="eyebrow">Biblioteca de aprendizaje</span><h2>Todos mis cursos</h2></div>
+      <span id="course-result-count">${state.courses.length} ${state.courses.length === 1 ? 'curso' : 'cursos'}</span>
+    </section>
+
+    <div class="filters courses-filters">
       <button class="filter-button active" data-filter="all">Todos</button>
       <button class="filter-button" data-filter="progress">En progreso</button>
-      <button class="filter-button" data-filter="complete">Completados</button>
+      <button class="filter-button" data-filter="new">No iniciados</button>
+      <button class="filter-button" data-filter="complete">Finalizados</button>
       ${categories.map(category => `<button class="filter-button" data-filter="category:${escapeHtml(category)}">${escapeHtml(category)}</button>`).join('')}
     </div>
 
-    <section class="grid-courses" id="course-grid">${state.courses.map(courseCard).join('')}</section>`;
+    <section class="learning-course-list" id="course-grid">${state.courses.map(professionalCourseCard).join('')}</section>`;
 
   document.querySelectorAll('[data-filter]').forEach(button => {
     button.addEventListener('click', () => {
@@ -1123,15 +1218,17 @@ function renderCourses() {
         return progress > 0 && progress < 100;
       });
 
+      if (filter === 'new') list = list.filter(course => courseProgress(course) === 0);
       if (filter === 'complete') list = list.filter(course => courseProgress(course) === 100);
       if (filter.startsWith('category:')) {
         const category = filter.slice('category:'.length);
         list = list.filter(course => course.category === category);
       }
 
+      document.querySelector('#course-result-count').textContent = `${list.length} ${list.length === 1 ? 'curso' : 'cursos'}`;
       document.querySelector('#course-grid').innerHTML = list.length
-        ? list.map(courseCard).join('')
-        : '<section class="empty-state glass"><h2>No hay cursos en esta categoría.</h2></section>';
+        ? list.map(professionalCourseCard).join('')
+        : '<section class="empty-state glass courses-empty"><h2>No hay cursos en esta categoría.</h2><p>Prueba con otro filtro para ver tus programas disponibles.</p></section>';
     });
   });
 }
