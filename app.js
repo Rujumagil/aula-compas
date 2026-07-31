@@ -445,6 +445,44 @@ function cover(course) {
   return normalizeMediaUrl(course.cover_url, 'curso-compas.webp');
 }
 
+const COURSE_MEDIA_BUCKET = 'course-media';
+const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const MAX_COVER_SIZE = 5 * 1024 * 1024;
+
+function validateCoverImage(file) {
+  if (!file || !file.size) return null;
+  if (!IMAGE_TYPES.includes(file.type)) {
+    throw new Error('La imagen debe estar en formato JPG, PNG o WebP.');
+  }
+  if (file.size > MAX_COVER_SIZE) {
+    throw new Error('La imagen no debe superar los 5 MB.');
+  }
+  return file;
+}
+
+function mediaExtension(file) {
+  if (file.type === 'image/png') return 'png';
+  if (file.type === 'image/webp') return 'webp';
+  return 'jpg';
+}
+
+async function uploadCourseMedia(file, folder, ownerId) {
+  validateCoverImage(file);
+  const path = `${folder}/${ownerId}/${Date.now()}-portada.${mediaExtension(file)}`;
+  const { error } = await db.storage
+    .from(COURSE_MEDIA_BUCKET)
+    .upload(path, file, { contentType: file.type, upsert: false });
+  if (error) throw error;
+  const { data } = db.storage.from(COURSE_MEDIA_BUCKET).getPublicUrl(path);
+  return { path, publicUrl: data.publicUrl };
+}
+
+async function removeCourseMedia(path) {
+  if (!path) return;
+  const { error } = await db.storage.from(COURSE_MEDIA_BUCKET).remove([path]);
+  if (error) throw error;
+}
+
 function sanitizeLessonHtml(value = '') {
   const template = document.createElement('template');
   template.innerHTML = String(value || '');
@@ -2624,8 +2662,17 @@ async function logout() {
 
 function renderAdmin() {
   const page = document.querySelector('#page');
+  const managedCourses = state.courses || [];
+  const publishedCourses = managedCourses.filter(course => course.status === 'published');
+  const draftCourses = managedCourses.filter(course => course.status !== 'published');
+  const totalModules = managedCourses.reduce((sum, course) => sum + (course.modules?.length || 0), 0);
+  const totalLessons = managedCourses.reduce((sum, course) =>
+    sum + (course.modules || []).reduce((moduleSum, module) => moduleSum + (module.lessons?.length || 0), 0), 0);
+  const activeEnrollments = isAdmin()
+    ? state.enrollments.filter(row => row.status !== 'cancelled')
+    : [];
 
-  const courseOptions = state.courses.map(course =>
+  const courseOptions = managedCourses.map(course =>
     `<option value="${course.id}">${escapeHtml(course.title)}</option>`
   ).join('');
 
@@ -2634,196 +2681,312 @@ function renderAdmin() {
     .map(profile => `<option value="${profile.id}">${escapeHtml(profile.full_name || profile.email)}</option>`)
     .join('');
 
+  const courseCards = managedCourses.length
+    ? managedCourses.map(course => {
+        const moduleCount = course.modules?.length || 0;
+        const lessonCount = (course.modules || []).reduce((sum, module) => sum + (module.lessons?.length || 0), 0);
+        const enrollmentCount = isAdmin()
+          ? activeEnrollments.filter(row => row.course_id === course.id).length
+          : null;
+        const isPublished = course.status === 'published';
+        return `
+          <article class="instructor-course-card">
+            <div class="instructor-course-cover">
+              <img src="${escapeHtml(cover(course))}" alt="Portada de ${escapeHtml(course.title)}" onerror="imageErrorFallback(event, 'curso-compas.webp')">
+              <span class="status-pill ${isPublished ? 'available' : ''}">${isPublished ? 'Publicado' : 'Borrador'}</span>
+            </div>
+            <div class="instructor-course-body">
+              <span class="instructor-course-category">${escapeHtml(course.category || 'Formación')}</span>
+              <h3>${escapeHtml(course.title)}</h3>
+              <p>${escapeHtml(course.subtitle || course.description || 'Curso de Aula Compás')}</p>
+              <div class="instructor-course-metrics">
+                <span><strong>${moduleCount}</strong> módulos</span>
+                <span><strong>${lessonCount}</strong> lecciones</span>
+                ${isAdmin() ? `<span><strong>${enrollmentCount}</strong> alumnos</span>` : ''}
+              </div>
+              <div class="instructor-course-actions">
+                <button class="btn btn-primary" type="button" data-admin-scroll="admin-content" data-select-course="${escapeHtml(course.id)}">Administrar contenido</button>
+                ${isAdmin() ? `<button class="btn btn-secondary" type="button" data-admin-scroll="admin-users">Ver alumnos</button>` : ''}
+                <button class="btn btn-secondary" type="button" data-course-status="${escapeHtml(course.id)}" data-next-status="${isPublished ? 'draft' : 'published'}">${isPublished ? 'Pasar a borrador' : 'Publicar'}</button>
+                ${course.cover_path ? `<button class="btn btn-secondary" type="button" data-remove-course-cover="${escapeHtml(course.id)}">Quitar portada</button>` : ''}
+                <button class="btn btn-danger" type="button" data-delete-course="${escapeHtml(course.id)}">Eliminar curso</button>
+              </div>
+            </div>
+          </article>`;
+      }).join('')
+    : `
+      <div class="instructor-empty-state">
+        <span>＋</span>
+        <h3>Aún no tienes cursos</h3>
+        <p>Crea tu primer curso y después agrega módulos, lecciones y recursos.</p>
+        <button class="btn btn-primary" type="button" data-admin-scroll="create-course-panel">Crear mi primer curso</button>
+      </div>`;
+
   page.innerHTML = `
-    <span class="eyebrow">Panel administrativo</span>
-    <h1 class="page-title">Control de Aula Compás</h1>
-    <p class="page-subtitle">Crea la estructura académica y asigna cursos a las personas que ya se registraron.</p>
-
-    <section class="admin-grid">
-      <article class="admin-card glass"><strong>${isAdmin() ? state.profiles.length : state.courses.length}</strong><span>${isAdmin() ? 'Usuarios registrados' : 'Cursos administrados'}</span></article>
-      <article class="admin-card glass"><strong>${state.courses.length}</strong><span>Cursos visibles</span></article>
-      <article class="admin-card glass"><strong>${isAdmin() ? state.enrollments.length : state.courses.reduce((sum, course) => sum + course.modules.length, 0)}</strong><span>${isAdmin() ? 'Inscripciones' : 'Módulos publicados'}</span></article>
-      ${isAdmin() ? `<article class="admin-card glass"><strong>${state.profiles.filter(profile => profile.role === 'instructor').length}</strong><span>Instructores</span></article>` : ''}
+    <section class="instructor-hero">
+      <div>
+        <span class="eyebrow">${isAdmin() ? 'Administración general' : 'Espacio del instructor'}</span>
+        <h1>${isAdmin() ? 'Panel de Aula Compás' : 'Panel del instructor'}</h1>
+        <p>${isAdmin()
+          ? 'Supervisa cursos, usuarios, inscripciones y contenidos desde un solo lugar.'
+          : 'Organiza tus cursos y prepara experiencias de aprendizaje claras para tus alumnos.'}</p>
+      </div>
+      <button class="btn btn-primary" type="button" data-admin-scroll="create-course-panel">＋ Crear curso</button>
     </section>
 
-    <section class="admin-command-bar">
-      <div><strong>Centro de operaciones</strong><span>Gestiona contenido, accesos y equipo desde un solo lugar.</span></div>
-      <div><button type="button" data-admin-scroll="admin-courses">Cursos</button><button type="button" data-admin-scroll="admin-resources">Recursos</button>${isAdmin() ? '<button type="button" data-admin-scroll="admin-users">Usuarios</button>' : ''}</div>
-    </section>
-
-    <section class="admin-layout">
-      <article class="settings-card glass">
-        <div class="section-heading"><h2>Crear curso</h2></div>
-        <form id="course-form" class="stack-form">
-          <div class="field"><label>Título</label><input name="title" required></div>
-          <div class="field"><label>Subtítulo</label><input name="subtitle"></div>
-          <div class="field"><label>Descripción</label><textarea name="description" rows="3"></textarea></div>
-          <div class="field"><label>Categoría</label><input name="category" value="Formación"></div>
-          <div class="field"><label>Ruta de portada</label><input name="coverUrl" value="curso-compas.webp"></div>
-          <div class="form-two-columns">
-            <div class="field"><label>Instructor</label><input name="instructorName" value="${escapeHtml(displayName())}"></div>
-            <div class="field"><label>Duración</label><input name="durationLabel" placeholder="4 semanas"></div>
-          </div>
-          <div class="form-two-columns">
-            <div class="field"><label>Precio MXN</label><input name="price" type="number" min="0" step="0.01"></div>
-            <div class="field"><label>Precio promocional</label><input name="salePrice" type="number" min="0" step="0.01"></div>
-          </div>
-          <div class="field"><label>Enlace de pago</label><input name="paymentUrl" type="url" placeholder="https://mpago.la/..."></div>
-          <div class="form-two-columns">
-            <div class="field"><label>Estado</label><select name="status"><option value="draft">Borrador</option><option value="published">Publicado</option></select></div>
-            <label class="switch-field"><input name="featured" type="checkbox"><span>Curso destacado</span></label>
-          </div>
-          <button class="btn btn-primary">Crear curso</button>
-        </form>
+    <section class="instructor-summary-grid">
+      <article class="instructor-summary-card">
+        <span class="summary-icon">▤</span>
+        <div><strong>${managedCourses.length}</strong><span>${isAdmin() ? 'Cursos administrados' : 'Mis cursos'}</span></div>
       </article>
-
-      <article class="settings-card glass">
-        <div class="section-heading"><h2>Agregar módulo</h2></div>
-        <form id="module-form" class="stack-form">
-          <div class="field"><label>Curso</label><select name="courseId" required>${courseOptions}</select></div>
-          <div class="field"><label>Título del módulo</label><input name="title" required></div>
-          <div class="field"><label>Posición</label><input name="position" type="number" min="1" value="1"></div>
-          <button class="btn btn-primary">Agregar módulo</button>
-        </form>
+      <article class="instructor-summary-card">
+        <span class="summary-icon">✓</span>
+        <div><strong>${publishedCourses.length}</strong><span>Publicados</span></div>
       </article>
-
-      ${isAdmin() ? `<article class="settings-card glass">
-        <div class="section-heading"><h2>Asignar curso</h2></div>
-        <form id="enrollment-form" class="stack-form">
-          <div class="field"><label>Alumno</label><select name="userId" required>${studentOptions || '<option value="">No hay alumnos registrados</option>'}</select></div>
-          <div class="field"><label>Curso</label><select name="courseId" required>${courseOptions}</select></div>
-          <button class="btn btn-primary" ${!studentOptions || !courseOptions ? 'disabled' : ''}>Asignar acceso</button>
-        </form>
-        <div class="demo-note">Por seguridad, los alumnos crean su propia cuenta desde la pantalla de registro. Después aparecerán aquí para que les asignes un curso.</div>
-      </article>` : ''}
+      <article class="instructor-summary-card">
+        <span class="summary-icon">◷</span>
+        <div><strong>${draftCourses.length}</strong><span>Borradores</span></div>
+      </article>
+      <article class="instructor-summary-card">
+        <span class="summary-icon">${isAdmin() ? '◎' : '≡'}</span>
+        <div><strong>${isAdmin() ? activeEnrollments.length : totalLessons}</strong><span>${isAdmin() ? 'Inscripciones activas' : 'Lecciones creadas'}</span></div>
+      </article>
     </section>
 
-    <section class="settings-card glass" id="admin-courses" style="margin-top:18px">
-      <div class="section-heading"><div><span class="eyebrow">Catálogo</span><h2>Estado de los cursos</h2></div></div>
-      <div class="admin-course-list">
-        ${state.courses.map(course => `
-          <article>
-            <img src="${escapeHtml(cover(course))}" alt="">
-            <div><strong>${escapeHtml(course.title)}</strong><small>${escapeHtml(course.category || 'Sin categoría')} · ${course.modules.length} módulos</small></div>
-            <span class="status-pill ${course.status === 'published' ? 'available' : ''}">${course.status === 'published' ? 'Publicado' : 'Borrador'}</span>
-            <button class="btn btn-secondary" data-course-status="${escapeHtml(course.id)}" data-next-status="${course.status === 'published' ? 'draft' : 'published'}">${course.status === 'published' ? 'Pasar a borrador' : 'Publicar'}</button>
-          </article>`).join('')}
+    <section class="instructor-quick-actions">
+      <div>
+        <span class="eyebrow">Acciones rápidas</span>
+        <h2>¿Qué deseas hacer hoy?</h2>
+      </div>
+      <div class="instructor-action-buttons">
+        <button type="button" data-admin-scroll="create-course-panel"><span>＋</span>Crear curso</button>
+        <button type="button" data-admin-scroll="admin-content"><span>▤</span>Agregar contenido</button>
+        <button type="button" data-admin-scroll="admin-resources"><span>▧</span>Subir recurso</button>
+        ${isAdmin() ? '<button type="button" data-admin-scroll="admin-users"><span>◎</span>Gestionar usuarios</button>' : ''}
       </div>
     </section>
 
-    <section class="settings-card glass" style="margin-top:18px">
-      <div class="section-heading"><h2>Agregar lección</h2></div>
+    <section class="instructor-section" id="admin-courses">
+      <div class="section-heading instructor-section-heading">
+        <div><span class="eyebrow">Catálogo académico</span><h2>${isAdmin() ? 'Cursos de la plataforma' : 'Mis cursos'}</h2></div>
+        <span class="section-count">${managedCourses.length} ${managedCourses.length === 1 ? 'curso' : 'cursos'}</span>
+      </div>
+      <div class="instructor-course-grid">${courseCards}</div>
+    </section>
+
+    <section class="instructor-workspace" id="create-course-panel">
+      <div class="instructor-workspace-header">
+        <div><span class="eyebrow">Constructor académico</span><h2>Crear y organizar contenido</h2></div>
+        <p>Completa cada bloque en orden. No necesitas terminar todo el curso en una sola sesión.</p>
+      </div>
+
+      <div class="instructor-builder-grid">
+        <article class="settings-card glass builder-card">
+          <div class="builder-step"><span>1</span><div><strong>Crear curso</strong><small>Información general y publicación</small></div></div>
+          <form id="course-form" class="stack-form">
+            <div class="field"><label>Título</label><input name="title" required></div>
+            <div class="field"><label>Subtítulo</label><input name="subtitle"></div>
+            <div class="field"><label>Descripción</label><textarea name="description" rows="3"></textarea></div>
+            <div class="field"><label>Categoría</label><input name="category" value="Formación"></div>
+            <div class="field">
+              <label>Imagen de portada del curso</label>
+              <input name="coverFile" type="file" accept="image/jpeg,image/png,image/webp">
+              <small>JPG, PNG o WebP · máximo 5 MB. Recomendado: 1600 × 900 px.</small>
+            </div>
+            <div class="field"><label>Ruta de portada opcional</label><input name="coverUrl" placeholder="curso-compas.webp o https://..."></div>
+            <div class="form-two-columns">
+              <div class="field"><label>Instructor</label><input name="instructorName" value="${escapeHtml(displayName())}"></div>
+              <div class="field"><label>Duración</label><input name="durationLabel" placeholder="4 semanas"></div>
+            </div>
+            <div class="form-two-columns">
+              <div class="field"><label>Precio MXN</label><input name="price" type="number" min="0" step="0.01"></div>
+              <div class="field"><label>Precio promocional</label><input name="salePrice" type="number" min="0" step="0.01"></div>
+            </div>
+            <div class="field"><label>Enlace de pago</label><input name="paymentUrl" type="url" placeholder="https://mpago.la/..."></div>
+            <div class="form-two-columns">
+              <div class="field"><label>Estado</label><select name="status"><option value="draft">Borrador</option><option value="published">Publicado</option></select></div>
+              <label class="switch-field"><input name="featured" type="checkbox"><span>Curso destacado</span></label>
+            </div>
+            <button class="btn btn-primary">Crear curso</button>
+          </form>
+        </article>
+
+        <article class="settings-card glass builder-card">
+          <div class="builder-step"><span>2</span><div><strong>Agregar módulo</strong><small>Divide el curso en etapas claras</small></div></div>
+          <form id="module-form" class="stack-form">
+            <div class="field"><label>Curso</label><select name="courseId" required>${courseOptions || '<option value="">Primero crea un curso</option>'}</select></div>
+            <div class="field"><label>Título del módulo</label><input name="title" required></div>
+            <div class="field"><label>Posición</label><input name="position" type="number" min="1" value="1"></div>
+            <button class="btn btn-primary" ${!courseOptions ? 'disabled' : ''}>Agregar módulo</button>
+          </form>
+        </article>
+
+        ${isAdmin() ? `<article class="settings-card glass builder-card">
+          <div class="builder-step"><span>3</span><div><strong>Asignar curso</strong><small>Concede acceso a un alumno</small></div></div>
+          <form id="enrollment-form" class="stack-form">
+            <div class="field"><label>Alumno</label><select name="userId" required>${studentOptions || '<option value="">No hay alumnos registrados</option>'}</select></div>
+            <div class="field"><label>Curso</label><select name="courseId" required>${courseOptions || '<option value="">No hay cursos disponibles</option>'}</select></div>
+            <button class="btn btn-primary" ${!studentOptions || !courseOptions ? 'disabled' : ''}>Asignar acceso</button>
+          </form>
+        </article>` : ''}
+      </div>
+    </section>
+
+    <section class="settings-card glass instructor-content-panel" id="admin-content">
+      <div class="builder-step"><span>${isAdmin() ? '4' : '3'}</span><div><strong>Agregar lección</strong><small>Incorpora video, duración y contenido a un módulo</small></div></div>
       <form id="lesson-form" class="admin-form admin-form-wide">
         <select name="moduleId" required>
-          ${state.courses.flatMap(course => course.modules.map(module =>
-            `<option value="${module.id}">${escapeHtml(course.title)} — ${escapeHtml(module.title)}</option>`
+          ${managedCourses.flatMap(course => course.modules.map(module =>
+            `<option value="${module.id}" data-course-id="${course.id}">${escapeHtml(course.title)} — ${escapeHtml(module.title)}</option>`
           )).join('') || '<option value="">Primero crea un módulo</option>'}
         </select>
         <input name="title" placeholder="Título de la lección" required>
         <input name="videoUrl" placeholder="URL incrustable de video">
         <input name="duration" type="number" min="0" value="10" placeholder="Minutos">
-        <button class="btn btn-primary">Agregar</button>
+        <button class="btn btn-primary" ${totalModules === 0 ? 'disabled' : ''}>Agregar</button>
       </form>
     </section>
 
-    <section class="settings-card glass" id="admin-resources" style="margin-top:18px">
-      <div class="section-heading"><h2>Agregar libro o recurso privado</h2></div>
-      <p class="page-subtitle">El archivo se guarda en un depósito privado. Solo podrán abrirlo las personas autorizadas para el curso seleccionado.</p>
+    <section class="settings-card glass instructor-content-panel" id="admin-resources">
+      <div class="builder-step"><span>${isAdmin() ? '5' : '4'}</span><div><strong>Agregar libro o recurso</strong><small>Entrega materiales privados a tus alumnos</small></div></div>
+      <p class="page-subtitle">El archivo se guarda en un depósito privado y solo lo abren las personas autorizadas.</p>
       <form id="resource-form" class="admin-form admin-resource-form">
-        <select name="courseId">
-          <option value="">Recurso general</option>
-          ${courseOptions}
-        </select>
+        <select name="courseId"><option value="">Recurso general</option>${courseOptions}</select>
         <input name="title" placeholder="Título del recurso" required>
-        <select name="resourceType" required>
-          <option value="book">Libro digital</option>
-          <option value="pdf">PDF</option>
-          <option value="template">Plantilla</option>
-          <option value="audio">Audio</option>
-          <option value="link">Enlace</option>
-        </select>
+        <select name="resourceType" required><option value="book">Libro digital</option><option value="pdf">PDF</option><option value="template">Plantilla</option><option value="audio">Audio</option><option value="link">Enlace</option></select>
         <input name="externalUrl" type="url" placeholder="Enlace externo opcional">
-        <label class="file-field">
-          <span>Archivo privado</span>
-          <input name="file" type="file" accept=".html,.htm,.pdf,.epub,.zip,.mp3,.m4a,.wav">
-        </label>
+        <label class="file-field"><span>Portada del libro o manual</span><input name="thumbnailFile" type="file" accept="image/jpeg,image/png,image/webp"></label>
+        <small class="field-help">JPG, PNG o WebP · máximo 5 MB. Recomendado para libros: 1200 × 1800 px.</small>
+        <label class="file-field"><span>Archivo privado</span><input name="file" type="file" accept=".html,.htm,.pdf,.epub,.zip,.mp3,.m4a,.wav"></label>
         <button class="btn btn-primary">Guardar recurso</button>
       </form>
-      <div class="demo-note">Para el libro digital utiliza el archivo HTML que contiene las 106 páginas. No lo subas al repositorio público.</div>
+      <div class="demo-note">Para un libro digital usa el archivo HTML autocontenido. No lo subas al repositorio público.</div>
     </section>
 
-    ${isAdmin() ? `<section class="settings-card glass" id="admin-users" style="margin-top:18px">
-      <div class="section-heading"><h2>Usuarios e inscripciones</h2></div>
-      <table class="admin-table">
+    <section class="settings-card glass instructor-content-panel" id="admin-resource-list">
+      <div class="section-heading"><div><span class="eyebrow">Biblioteca administrada</span><h2>Libros, manuales y recursos</h2></div><span class="section-count">${state.resources.length} recursos</span></div>
+      <div class="admin-resource-grid">
+        ${state.resources.length ? state.resources.map(resource => `
+          <article class="admin-resource-card">
+            <img src="${escapeHtml(normalizeMediaUrl(resource.thumbnail_url, resource.resource_type === 'book' ? 'recurso-cuentos.webp' : 'recurso-manual.webp'))}" alt="Portada de ${escapeHtml(resource.title)}" onerror="imageErrorFallback(event, 'recurso-manual.webp')">
+            <div>
+              <span class="status-pill">${escapeHtml(resource.resource_type || 'recurso')}</span>
+              <h3>${escapeHtml(resource.title)}</h3>
+              <p>${escapeHtml(managedCourses.find(course => course.id === resource.course_id)?.title || 'Recurso general')}</p>
+              <div class="instructor-course-actions">
+                ${resource.thumbnail_path ? `<button class="btn btn-secondary" type="button" data-remove-resource-cover="${escapeHtml(resource.id)}">Quitar portada</button>` : ''}
+                <button class="btn btn-danger" type="button" data-delete-resource="${escapeHtml(resource.id)}">Eliminar recurso</button>
+              </div>
+            </div>
+          </article>
+        `).join('') : '<div class="instructor-empty-state"><span>▧</span><h3>Aún no hay recursos</h3><p>Sube un libro, manual, PDF o material de apoyo.</p></div>'}
+      </div>
+    </section>
+
+    ${isAdmin() ? `<section class="settings-card glass instructor-content-panel" id="admin-users">
+      <div class="section-heading"><div><span class="eyebrow">Comunidad</span><h2>Usuarios e inscripciones</h2></div></div>
+      <div class="admin-table-wrap"><table class="admin-table">
         <thead><tr><th>Usuario</th><th>Correo</th><th>Rol</th><th>Cursos asignados</th></tr></thead>
-        <tbody>
-          ${state.profiles.map(profile => {
-            const assigned = state.enrollments
-              .filter(row => row.user_id === profile.id && row.status !== 'cancelled')
-              .map(row => state.courses.find(course => course.id === row.course_id)?.title)
-              .filter(Boolean);
-            return `<tr>
-              <td>${escapeHtml(profile.full_name || 'Sin nombre')}</td>
-              <td>${escapeHtml(profile.email || '')}</td>
-              <td>
-                <select data-role-user="${escapeHtml(profile.id)}" ${profile.id === state.user.id ? 'disabled' : ''}>
-                  <option value="student" ${profile.role === 'student' ? 'selected' : ''}>Alumno</option>
-                  <option value="instructor" ${profile.role === 'instructor' ? 'selected' : ''}>Instructor</option>
-                  <option value="admin" ${profile.role === 'admin' ? 'selected' : ''}>Administrador</option>
-                </select>
-              </td>
-              <td>${escapeHtml(assigned.join(', ') || 'Ninguno')}</td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table>
+        <tbody>${state.profiles.map(profile => {
+          const assigned = state.enrollments.filter(row => row.user_id === profile.id && row.status !== 'cancelled').map(row => managedCourses.find(course => course.id === row.course_id)?.title).filter(Boolean);
+          return `<tr><td>${escapeHtml(profile.full_name || 'Sin nombre')}</td><td>${escapeHtml(profile.email || '')}</td><td><select data-role-user="${escapeHtml(profile.id)}" ${profile.id === state.user.id ? 'disabled' : ''}><option value="student" ${profile.role === 'student' ? 'selected' : ''}>Alumno</option><option value="instructor" ${profile.role === 'instructor' ? 'selected' : ''}>Instructor</option><option value="admin" ${profile.role === 'admin' ? 'selected' : ''}>Administrador</option></select></td><td>${escapeHtml(assigned.join(', ') || 'Ninguno')}</td></tr>`;
+        }).join('')}</tbody>
+      </table></div>
     </section>` : ''}`;
 
-  document.querySelector('#course-form').addEventListener('submit', createCourse);
-  document.querySelector('#module-form').addEventListener('submit', createModule);
-  document.querySelector('#lesson-form').addEventListener('submit', createLesson);
-  document.querySelector('#resource-form').addEventListener('submit', createResource);
+  document.querySelector('#course-form')?.addEventListener('submit', createCourse);
+  document.querySelector('#module-form')?.addEventListener('submit', createModule);
+  document.querySelector('#lesson-form')?.addEventListener('submit', createLesson);
+  document.querySelector('#resource-form')?.addEventListener('submit', createResource);
   document.querySelector('#enrollment-form')?.addEventListener('submit', assignCourse);
   document.querySelectorAll('[data-course-status]').forEach(button =>
     button.addEventListener('click', () => setCourseStatus(button.dataset.courseStatus, button.dataset.nextStatus))
+  );
+  document.querySelectorAll('[data-delete-course]').forEach(button =>
+    button.addEventListener('click', () => deleteCourse(button.dataset.deleteCourse))
+  );
+  document.querySelectorAll('[data-remove-course-cover]').forEach(button =>
+    button.addEventListener('click', () => removeCourseCover(button.dataset.removeCourseCover))
+  );
+  document.querySelectorAll('[data-delete-resource]').forEach(button =>
+    button.addEventListener('click', () => deleteResource(button.dataset.deleteResource))
+  );
+  document.querySelectorAll('[data-remove-resource-cover]').forEach(button =>
+    button.addEventListener('click', () => removeResourceCover(button.dataset.removeResourceCover))
   );
   document.querySelectorAll('[data-role-user]').forEach(select =>
     select.addEventListener('change', () => updateUserRole(select.dataset.roleUser, select.value))
   );
   document.querySelectorAll('[data-admin-scroll]').forEach(button =>
-    button.addEventListener('click', () => document.querySelector(`#${button.dataset.adminScroll}`)?.scrollIntoView({ behavior: 'smooth' }))
+    button.addEventListener('click', () => {
+      const target = document.querySelector(`#${button.dataset.adminScroll}`);
+      target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (button.dataset.selectCourse) {
+        const moduleCourseSelect = document.querySelector('#module-form select[name="courseId"]');
+        const resourceCourseSelect = document.querySelector('#resource-form select[name="courseId"]');
+        if (moduleCourseSelect) moduleCourseSelect.value = button.dataset.selectCourse;
+        if (resourceCourseSelect) resourceCourseSelect.value = button.dataset.selectCourse;
+        const lessonSelect = document.querySelector('#lesson-form select[name="moduleId"]');
+        const matchingOption = lessonSelect ? [...lessonSelect.options].find(option => option.dataset.courseId === button.dataset.selectCourse) : null;
+        if (matchingOption) lessonSelect.value = matchingOption.value;
+      }
+    })
   );
 }
 
 async function createCourse(event) {
   event.preventDefault();
-  const form = new FormData(event.currentTarget);
-  setFormBusy(event.currentTarget, true);
+  const formElement = event.currentTarget;
+  const form = new FormData(formElement);
+  const coverFile = form.get('coverFile');
+  setFormBusy(formElement, true);
 
-  const title = String(form.get('title')).trim();
-  const { error } = await db.from('courses').insert({
-    title,
-    slug: `${slugify(title)}-${Date.now().toString().slice(-5)}`,
-    subtitle: String(form.get('subtitle')).trim() || null,
-    description: String(form.get('description')).trim() || null,
-    category: String(form.get('category')).trim() || 'Formación',
-    cover_url: String(form.get('coverUrl')).trim() || 'curso-compas.webp',
-    instructor_name: String(form.get('instructorName')).trim() || displayName(),
-    duration_label: String(form.get('durationLabel')).trim() || null,
-    price: Number(form.get('price')) || null,
-    sale_price: Number(form.get('salePrice')) || null,
-    payment_url: String(form.get('paymentUrl')).trim() || null,
-    status: String(form.get('status')) || 'draft',
-    featured: form.get('featured') === 'on',
-    created_by: state.user.id
-  });
+  let courseId = null;
+  let uploadedCover = null;
 
-  setFormBusy(event.currentTarget, false);
-  if (error) return showToast(error.message, 'error');
+  try {
+    if (coverFile?.size) validateCoverImage(coverFile);
+    const title = String(form.get('title')).trim();
+    const { data: course, error } = await db.from('courses').insert({
+      title,
+      slug: `${slugify(title)}-${Date.now().toString().slice(-5)}`,
+      subtitle: String(form.get('subtitle')).trim() || null,
+      description: String(form.get('description')).trim() || null,
+      category: String(form.get('category')).trim() || 'Formación',
+      cover_url: String(form.get('coverUrl')).trim() || 'curso-compas.webp',
+      instructor_name: String(form.get('instructorName')).trim() || displayName(),
+      duration_label: String(form.get('durationLabel')).trim() || null,
+      price: Number(form.get('price')) || null,
+      sale_price: Number(form.get('salePrice')) || null,
+      payment_url: String(form.get('paymentUrl')).trim() || null,
+      status: String(form.get('status')) || 'draft',
+      featured: form.get('featured') === 'on',
+      created_by: state.user.id
+    }).select().single();
+    if (error) throw error;
+    courseId = course.id;
 
-  showToast('Curso creado.', 'success');
-  await loadApplicationData();
-  renderAdmin();
+    if (coverFile?.size) {
+      uploadedCover = await uploadCourseMedia(coverFile, 'courses', course.id);
+      const { error: updateError } = await db.from('courses').update({
+        cover_url: uploadedCover.publicUrl,
+        cover_path: uploadedCover.path
+      }).eq('id', course.id);
+      if (updateError) throw updateError;
+    }
+
+    showToast('Curso creado correctamente.', 'success');
+    formElement.reset();
+    await loadApplicationData();
+    renderAdmin();
+  } catch (error) {
+    console.error(error);
+    if (uploadedCover?.path) await removeCourseMedia(uploadedCover.path).catch(() => {});
+    if (courseId) await db.from('courses').delete().eq('id', courseId).catch(() => {});
+    showToast(error.message || 'No se pudo crear el curso.', 'error');
+  } finally {
+    setFormBusy(formElement, false);
+  }
 }
 
 async function setCourseStatus(courseId, status) {
@@ -2894,6 +3057,7 @@ async function createResource(event) {
   const formElement = event.currentTarget;
   const form = new FormData(formElement);
   const file = form.get('file');
+  const thumbnailFile = form.get('thumbnailFile');
   const externalUrl = String(form.get('externalUrl') || '').trim();
   const courseId = String(form.get('courseId') || '').trim();
 
@@ -2904,9 +3068,11 @@ async function createResource(event) {
 
   setFormBusy(formElement, true);
   let filePath = null;
-  let resourceCreated = false;
+  let thumbnail = null;
+  let resourceId = null;
 
   try {
+    if (thumbnailFile?.size) validateCoverImage(thumbnailFile);
     if (file?.size) {
       const cleanName = file.name
         .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -2923,16 +3089,22 @@ async function createResource(event) {
       if (uploadError) throw uploadError;
     }
 
-    const { error } = await db.from('resources').insert({
+    if (thumbnailFile?.size) {
+      thumbnail = await uploadCourseMedia(thumbnailFile, 'resources', courseId || state.user.id);
+    }
+
+    const { data: resource, error } = await db.from('resources').insert({
       course_id: courseId || null,
       title: String(form.get('title')).trim(),
       resource_type: String(form.get('resourceType')).trim(),
       external_url: externalUrl || null,
       file_path: filePath,
+      thumbnail_url: thumbnail?.publicUrl || null,
+      thumbnail_path: thumbnail?.path || null,
       is_public: false
-    });
+    }).select().single();
     if (error) throw error;
-    resourceCreated = true;
+    resourceId = resource.id;
 
     showToast('Recurso privado guardado.', 'success');
     formElement.reset();
@@ -2940,12 +3112,90 @@ async function createResource(event) {
     renderAdmin();
   } catch (error) {
     console.error(error);
-    if (filePath && !resourceCreated) {
-      await db.storage.from('digital-products').remove([filePath]).catch(() => {});
-    }
+    if (filePath && !resourceId) await db.storage.from('digital-products').remove([filePath]).catch(() => {});
+    if (thumbnail?.path && !resourceId) await removeCourseMedia(thumbnail.path).catch(() => {});
     showToast(error.message || 'No se pudo guardar el recurso.', 'error');
   } finally {
     setFormBusy(formElement, false);
+  }
+}
+
+async function removeCourseCover(courseId) {
+  const course = state.courses.find(item => item.id === courseId);
+  if (!course?.cover_path) return;
+  if (!confirm(`¿Quitar la portada de “${course.title}”?`)) return;
+  try {
+    await removeCourseMedia(course.cover_path);
+    const { error } = await db.from('courses').update({ cover_url: 'curso-compas.webp', cover_path: null }).eq('id', courseId);
+    if (error) throw error;
+    showToast('Portada eliminada.', 'success');
+    await loadApplicationData();
+    renderAdmin();
+  } catch (error) {
+    showToast(error.message || 'No se pudo eliminar la portada.', 'error');
+  }
+}
+
+async function removeResourceCover(resourceId) {
+  const resource = state.resources.find(item => item.id === resourceId);
+  if (!resource?.thumbnail_path) return;
+  if (!confirm(`¿Quitar la portada de “${resource.title}”?`)) return;
+  try {
+    await removeCourseMedia(resource.thumbnail_path);
+    const { error } = await db.from('resources').update({ thumbnail_url: null, thumbnail_path: null }).eq('id', resourceId);
+    if (error) throw error;
+    showToast('Portada eliminada.', 'success');
+    await loadApplicationData();
+    renderAdmin();
+  } catch (error) {
+    showToast(error.message || 'No se pudo eliminar la portada.', 'error');
+  }
+}
+
+async function deleteResource(resourceId, skipConfirmation = false) {
+  const resource = state.resources.find(item => item.id === resourceId);
+  if (!resource) return;
+  if (!skipConfirmation && !confirm(`¿Eliminar definitivamente “${resource.title}”? Esta acción no se puede deshacer.`)) return;
+  try {
+    if (resource.file_path) {
+      const { error } = await db.storage.from('digital-products').remove([resource.file_path]);
+      if (error) throw error;
+    }
+    if (resource.thumbnail_path) await removeCourseMedia(resource.thumbnail_path);
+    const { error } = await db.from('resources').delete().eq('id', resourceId);
+    if (error) throw error;
+    if (!skipConfirmation) {
+      showToast('Recurso eliminado.', 'success');
+      await loadApplicationData();
+      renderAdmin();
+    }
+  } catch (error) {
+    if (!skipConfirmation) showToast(error.message || 'No se pudo eliminar el recurso.', 'error');
+    else throw error;
+  }
+}
+
+async function deleteCourse(courseId) {
+  const course = state.courses.find(item => item.id === courseId);
+  if (!course) return;
+  const confirmation = prompt(`Para eliminar el curso escribe ELIMINAR:
+${course.title}`);
+  if (confirmation !== 'ELIMINAR') {
+    if (confirmation !== null) showToast('El curso no fue eliminado.', 'error');
+    return;
+  }
+  try {
+    const relatedResources = state.resources.filter(item => item.course_id === courseId);
+    for (const resource of relatedResources) await deleteResource(resource.id, true);
+    if (course.cover_path) await removeCourseMedia(course.cover_path);
+    const { error } = await db.rpc('delete_managed_course', { target_course: courseId });
+    if (error) throw error;
+    showToast('Curso eliminado definitivamente.', 'success');
+    await loadApplicationData();
+    renderAdmin();
+  } catch (error) {
+    console.error(error);
+    showToast(error.message || 'No se pudo eliminar el curso.', 'error');
   }
 }
 
