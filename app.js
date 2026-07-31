@@ -2027,41 +2027,196 @@ function renderSearch(term) {
     </section>`;
 }
 
+function certificateStatus(course) {
+  const lessons = allLessons(course);
+  const progress = lessons.length ? courseProgress(course) : 0;
+  const completedLessons = lessons.filter(lesson => state.progress[lesson.id]).length;
+  return { lessons: lessons.length, progress, completedLessons, isComplete: lessons.length > 0 && progress === 100 };
+}
+
 function renderCertificates() {
   const page = document.querySelector('#page');
-  const completed = state.courses.filter(course => courseProgress(course) === 100 && allLessons(course).length);
+  const courseSummaries = state.courses
+    .map(course => ({ course, ...certificateStatus(course) }))
+    .filter(item => item.lessons > 0);
+  const completed = courseSummaries.filter(item => item.isComplete);
+  const pending = courseSummaries.filter(item => !item.isComplete).sort((a, b) => b.progress - a.progress);
+  const nextCertificate = pending[0] || null;
+
   page.innerHTML = `
-    <span class="eyebrow">Reconoce tu avance</span>
-    <h1 class="page-title">Mis certificados</h1>
-    <p class="page-subtitle">Los certificados se habilitan cuando completas todas las lecciones de un programa.</p>
-    <section class="certificate-grid">
-      ${completed.length ? completed.map(course => `
-        <article class="certificate-card glass">
-          <img src="${escapeHtml(cover(course))}" alt="">
-          <div><span class="badge">Completado</span><h2>${escapeHtml(course.title)}</h2><p>Certificado disponible para ${escapeHtml(displayName())}.</p><a class="btn btn-primary" href="#certificate/${course.id}">Ver certificado</a></div>
-        </article>`).join('') : `
-        <section class="empty-state glass"><h2>Tu próximo logro está en camino.</h2><p>Completa un curso al 100% para habilitar su certificado.</p><a class="btn btn-primary" href="#courses">Continuar aprendiendo</a></section>`}
+    <section class="certificates-page-heading">
+      <div>
+        <span class="eyebrow">Reconoce tu constancia</span>
+        <h1 class="page-title">Mis certificados</h1>
+        <p class="page-subtitle">Consulta los reconocimientos obtenidos y revisa cuánto te falta para desbloquear el siguiente.</p>
+      </div>
+      <div class="certificates-summary" aria-label="Resumen de certificados">
+        <article><strong>${completed.length}</strong><span>Disponibles</span></article>
+        <article><strong>${pending.length}</strong><span>En proceso</span></article>
+      </div>
+    </section>
+
+    ${completed.length ? `
+      <section class="certificate-featured">
+        <div class="certificate-featured-copy">
+          <span class="eyebrow">Logro más reciente</span>
+          <h2>${escapeHtml(completed[0].course.title)}</h2>
+          <p>Tu constancia ya está disponible. Puedes abrirla, imprimirla o guardarla como PDF desde cualquier dispositivo.</p>
+          <div class="certificate-featured-actions">
+            <a class="btn btn-primary" href="#certificate/${completed[0].course.id}">Ver certificado</a>
+            <a class="btn btn-secondary" href="#courses">Seguir aprendiendo</a>
+          </div>
+        </div>
+        <div class="certificate-featured-preview" aria-hidden="true">
+          <div class="certificate-mini-document">
+            <img src="logo-completo-oficial.png" alt="">
+            <span>CONSTANCIA</span>
+            <strong>${escapeHtml(displayName())}</strong>
+            <small>${escapeHtml(completed[0].course.title)}</small>
+            <i>PC</i>
+          </div>
+        </div>
+      </section>` : nextCertificate ? `
+      <section class="certificate-progress-hero glass">
+        <div class="certificate-progress-icon">◇</div>
+        <div class="certificate-progress-copy">
+          <span class="eyebrow">Tu siguiente reconocimiento</span>
+          <h2>${escapeHtml(nextCertificate.course.title)}</h2>
+          <p>Has completado ${nextCertificate.completedLessons} de ${nextCertificate.lessons} lecciones. Continúa hasta alcanzar el 100%.</p>
+          <div class="certificate-progress-bar"><span style="width:${nextCertificate.progress}%"></span></div>
+          <small>${nextCertificate.progress}% completado</small>
+        </div>
+        <a class="btn btn-primary" href="#course/${nextCertificate.course.id}">Continuar curso</a>
+      </section>` : `
+      <section class="certificate-empty-hero glass">
+        <div class="certificate-empty-icon">◇</div>
+        <span class="eyebrow">Tu próximo logro comienza aquí</span>
+        <h2>Aún no tienes cursos con certificado</h2>
+        <p>Cuando tengas acceso a un programa con lecciones, podrás consultar aquí tu avance y tus reconocimientos.</p>
+        <a class="btn btn-primary" href="#catalog">Explorar cursos</a>
+      </section>`}
+
+    ${completed.length ? `
+      <section class="certificates-section">
+        <div class="section-heading certificates-section-heading">
+          <div><span class="eyebrow">Reconocimientos obtenidos</span><h2>Certificados disponibles</h2></div>
+          <span>${completed.length} ${completed.length === 1 ? 'certificado' : 'certificados'}</span>
+        </div>
+        <div class="certificates-grid-professional">
+          ${completed.map(({ course }) => `
+            <article class="certificate-achievement-card glass">
+              <div class="certificate-achievement-cover">
+                <img src="${escapeHtml(cover(course))}" alt="${escapeHtml(course.title)}" onerror="imageErrorFallback(event, 'curso-compas.webp')">
+                <span>Completado</span>
+              </div>
+              <div class="certificate-achievement-body">
+                <span class="eyebrow">Constancia digital</span>
+                <h3>${escapeHtml(course.title)}</h3>
+                <p>Emitida para ${escapeHtml(displayName())} al completar todas las lecciones.</p>
+                <div class="certificate-achievement-actions">
+                  <a class="btn btn-primary" href="#certificate/${course.id}">Abrir certificado</a>
+                  <a class="certificate-text-link" href="#course/${course.id}">Ver curso →</a>
+                </div>
+              </div>
+            </article>`).join('')}
+        </div>
+      </section>` : ''}
+
+    ${pending.length ? `
+      <section class="certificates-section certificates-pending-section">
+        <div class="section-heading certificates-section-heading">
+          <div><span class="eyebrow">Sigue avanzando</span><h2>Certificados en proceso</h2></div>
+          <span>${pending.length} ${pending.length === 1 ? 'programa' : 'programas'}</span>
+        </div>
+        <div class="certificate-pending-list">
+          ${pending.map(({ course, progress, completedLessons, lessons }) => `
+            <article class="certificate-pending-card glass">
+              <img src="${escapeHtml(cover(course))}" alt="${escapeHtml(course.title)}" onerror="imageErrorFallback(event, 'curso-compas.webp')">
+              <div class="certificate-pending-copy">
+                <div class="certificate-pending-topline"><span>${progress === 0 ? 'No iniciado' : 'En progreso'}</span><strong>${progress}%</strong></div>
+                <h3>${escapeHtml(course.title)}</h3>
+                <p>${completedLessons} de ${lessons} lecciones completadas</p>
+                <div class="certificate-progress-bar"><span style="width:${progress}%"></span></div>
+              </div>
+              <a class="btn btn-secondary" href="#course/${course.id}">${progress === 0 ? 'Comenzar' : 'Continuar'}</a>
+            </article>`).join('')}
+        </div>
+      </section>` : ''}
+
+    <section class="certificate-info-note">
+      <span>i</span>
+      <div><strong>¿Cómo se habilita un certificado?</strong><p>Se genera automáticamente cuando completas el 100% de las lecciones de un curso. Después podrás imprimirlo o guardarlo en PDF.</p></div>
+      <a href="#help">Ver ayuda</a>
     </section>`;
 }
 
 function renderCertificate(courseId) {
   const page = document.querySelector('#page');
   const course = findCourse(courseId);
-  if (!course || courseProgress(course) !== 100 || !allLessons(course).length) return renderCertificates();
+  const status = course ? certificateStatus(course) : null;
+  if (!course || !status?.isComplete) return renderCertificates();
+
   const date = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
+  const credentialCode = `PC-${String(course.id).replace(/[^a-z0-9]/gi, '').slice(0, 8).toUpperCase()}-${String(state.user?.id || 'ALUMNO').replace(/[^a-z0-9]/gi, '').slice(0, 6).toUpperCase()}`;
+
   page.innerHTML = `
-    <div class="certificate-actions"><a class="back-link" href="#certificates">← Volver</a><button class="btn btn-primary" id="print-certificate">Imprimir o guardar PDF</button></div>
-    <section class="certificate-document">
-      <img src="logo-completo-oficial.png" alt="Proyecto Compás">
-      <span>CONSTANCIA DE FINALIZACIÓN</span>
-      <p>Proyecto Compás reconoce a</p>
-      <h1>${escapeHtml(displayName())}</h1>
-      <p>por haber completado satisfactoriamente el programa</p>
-      <h2>${escapeHtml(course.title)}</h2>
-      <div class="certificate-seal">PC</div>
-      <small>Emitido el ${escapeHtml(date)} · Aula Compás</small>
+    <section class="certificate-view-heading">
+      <div>
+        <a class="back-link" href="#certificates">← Volver a mis certificados</a>
+        <span class="eyebrow">Constancia digital</span>
+        <h1 class="page-title">${escapeHtml(course.title)}</h1>
+        <p class="page-subtitle">Revisa tu reconocimiento y guárdalo en formato PDF.</p>
+      </div>
+      <div class="certificate-actions">
+        <button class="btn btn-secondary" id="copy-certificate-code" type="button">Copiar folio</button>
+        <button class="btn btn-primary" id="print-certificate" type="button">Imprimir o guardar PDF</button>
+      </div>
+    </section>
+
+    <section class="certificate-document-wrap">
+      <div class="certificate-document" id="certificate-document">
+        <div class="certificate-border certificate-border-outer"></div>
+        <div class="certificate-border certificate-border-inner"></div>
+        <div class="certificate-corner top-left">✦</div>
+        <div class="certificate-corner top-right">✦</div>
+        <div class="certificate-corner bottom-left">✦</div>
+        <div class="certificate-corner bottom-right">✦</div>
+
+        <img class="certificate-logo" src="logo-completo-oficial.png" alt="Proyecto Compás">
+        <span class="certificate-kicker">CONSTANCIA DE FINALIZACIÓN</span>
+        <p class="certificate-intro">Proyecto Compás reconoce a</p>
+        <h1>${escapeHtml(displayName())}</h1>
+        <div class="certificate-name-line"></div>
+        <p class="certificate-course-intro">por haber completado satisfactoriamente el programa</p>
+        <h2>${escapeHtml(course.title)}</h2>
+        <p class="certificate-description">Demostrando compromiso, constancia y dedicación durante su proceso de aprendizaje en Aula Compás.</p>
+
+        <div class="certificate-footer-data">
+          <div><span>${escapeHtml(date)}</span><small>Fecha de emisión</small></div>
+          <div class="certificate-seal"><strong>PC</strong><small>PROYECTO<br>COMPÁS</small></div>
+          <div><span>Rubén Martínez</span><small>Dirección · Proyecto Compás</small></div>
+        </div>
+        <small class="certificate-code">Folio: ${escapeHtml(credentialCode)} · Aula Compás</small>
+      </div>
+    </section>
+
+    <section class="certificate-download-help glass">
+      <span>⌄</span>
+      <div><strong>Guardar como PDF</strong><p>Selecciona “Imprimir o guardar PDF” y, en la ventana de impresión, elige la opción “Guardar como PDF”.</p></div>
     </section>`;
-  document.querySelector('#print-certificate').addEventListener('click', () => window.print());
+
+  document.querySelector('#print-certificate')?.addEventListener('click', () => window.print());
+  document.querySelector('#copy-certificate-code')?.addEventListener('click', async event => {
+    try {
+      await navigator.clipboard.writeText(credentialCode);
+      const button = event.currentTarget;
+      const original = button.textContent;
+      button.textContent = 'Folio copiado';
+      setTimeout(() => { button.textContent = original; }, 1800);
+    } catch {
+      window.prompt('Copia el folio de tu certificado:', credentialCode);
+    }
+  });
 }
 
 function renderProfile() {

@@ -1,4 +1,4 @@
-const CACHE = 'aula-compas-v6-0-4-calendar';
+const CACHE = 'aula-compas-v6-0-5-certificates';
 const STATIC_ASSETS = [
   './',
   './index.html',
