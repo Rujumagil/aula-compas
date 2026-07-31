@@ -2289,10 +2289,17 @@ function renderProfile() {
               <input id="profile-email" value="${escapeHtml(state.user.email)}" disabled>
               <small>Tu correo se utiliza para iniciar sesión.</small>
             </div>
-            <div class="field profile-field-wide">
-              <label for="avatar-url">URL de fotografía</label>
-              <input id="avatar-url" name="avatarUrl" type="url" value="${escapeHtml(state.profile?.avatar_url || '')}" placeholder="https://ejemplo.com/mi-fotografia.jpg">
-              <small>Usa un enlace público directo a una imagen JPG, PNG o WebP.</small>
+            <div class="field profile-field-wide profile-photo-field">
+              <label>Fotografía de perfil</label>
+              <div class="profile-photo-control">
+                <img id="profile-photo-preview" src="${escapeHtml(avatarUrl())}" alt="Vista previa de la fotografía" onerror="imageErrorFallback(event, 'icono-oficial.png')">
+                <div>
+                  <strong>Elige una fotografía</strong>
+                  <small>JPG, PNG o WebP · máximo 2 MB. Se recortará a 600 × 600 px.</small>
+                  <button class="btn btn-secondary profile-photo-button" id="choose-avatar-button" type="button">Cambiar fotografía</button>
+                  <input id="avatar-file-input" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+                </div>
+              </div>
             </div>
             <div class="profile-form-actions profile-field-wide">
               <span>Los cambios se reflejarán en todo el aula.</span>
@@ -2348,8 +2355,238 @@ function renderProfile() {
     </section>`;
 
   document.querySelector('#profile-form')?.addEventListener('submit', updateProfile);
+  document.querySelector('#choose-avatar-button')?.addEventListener('click', () => document.querySelector('#avatar-file-input')?.click());
+  document.querySelector('#avatar-file-input')?.addEventListener('change', handleAvatarSelection);
   document.querySelector('#logout-button')?.addEventListener('click', logout);
   document.querySelectorAll('[data-install]').forEach(button => button.addEventListener('click', installApp));
+}
+
+
+const AVATAR_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
+const AVATAR_OUTPUT_SIZE = 600;
+let avatarEditorState = null;
+
+function handleAvatarSelection(event) {
+  const file = event.target.files?.[0];
+  event.target.value = '';
+  if (!file) return;
+
+  if (!AVATAR_ALLOWED_TYPES.includes(file.type)) {
+    showToast('Solo puedes subir imágenes JPG, PNG o WebP.', 'error');
+    return;
+  }
+  if (file.size > AVATAR_MAX_BYTES) {
+    showToast('La fotografía no debe superar los 2 MB.', 'error');
+    return;
+  }
+
+  const objectUrl = URL.createObjectURL(file);
+  const image = new Image();
+  image.onload = () => {
+    openAvatarEditor(image, objectUrl);
+  };
+  image.onerror = () => {
+    URL.revokeObjectURL(objectUrl);
+    showToast('No se pudo leer la imagen seleccionada.', 'error');
+  };
+  image.src = objectUrl;
+}
+
+function openAvatarEditor(image, objectUrl) {
+  closeAvatarEditor();
+  avatarEditorState = {
+    image,
+    objectUrl,
+    zoom: 1,
+    offsetX: 0,
+    offsetY: 0,
+    dragging: false,
+    startX: 0,
+    startY: 0,
+    originX: 0,
+    originY: 0
+  };
+
+  document.body.insertAdjacentHTML('beforeend', `
+    <div class="avatar-editor-backdrop" id="avatar-editor" role="dialog" aria-modal="true" aria-labelledby="avatar-editor-title">
+      <section class="avatar-editor-card glass">
+        <header>
+          <div><span class="eyebrow">Mi perfil</span><h2 id="avatar-editor-title">Ajustar fotografía</h2></div>
+          <button class="avatar-editor-close" id="avatar-editor-close" type="button" aria-label="Cerrar">×</button>
+        </header>
+        <p>Arrastra la imagen para centrarla y utiliza el control para acercar o alejar.</p>
+        <div class="avatar-crop-stage" id="avatar-crop-stage">
+          <canvas id="avatar-crop-canvas" width="600" height="600"></canvas>
+          <span class="avatar-crop-ring" aria-hidden="true"></span>
+        </div>
+        <label class="avatar-zoom-control" for="avatar-zoom">
+          <span>Zoom</span>
+          <input id="avatar-zoom" type="range" min="1" max="3" step="0.01" value="1">
+        </label>
+        <div class="avatar-upload-progress hide" id="avatar-upload-progress">
+          <div><span>Subiendo fotografía…</span><strong id="avatar-progress-label">0%</strong></div>
+          <div class="avatar-progress-track"><span id="avatar-progress-bar"></span></div>
+        </div>
+        <footer>
+          <button class="btn btn-secondary" id="avatar-cancel" type="button">Cancelar</button>
+          <button class="btn btn-primary" id="avatar-save" type="button">Guardar fotografía</button>
+        </footer>
+      </section>
+    </div>`);
+
+  document.body.classList.add('modal-open');
+  const stage = document.querySelector('#avatar-crop-stage');
+  const zoom = document.querySelector('#avatar-zoom');
+  document.querySelector('#avatar-editor-close')?.addEventListener('click', closeAvatarEditor);
+  document.querySelector('#avatar-cancel')?.addEventListener('click', closeAvatarEditor);
+  document.querySelector('#avatar-save')?.addEventListener('click', saveAvatarImage);
+  document.querySelector('#avatar-editor')?.addEventListener('click', event => {
+    if (event.target.id === 'avatar-editor') closeAvatarEditor();
+  });
+  zoom?.addEventListener('input', event => {
+    avatarEditorState.zoom = Number(event.target.value);
+    clampAvatarOffsets();
+    drawAvatarCrop();
+  });
+  stage?.addEventListener('pointerdown', startAvatarDrag);
+  stage?.addEventListener('pointermove', moveAvatarDrag);
+  stage?.addEventListener('pointerup', endAvatarDrag);
+  stage?.addEventListener('pointercancel', endAvatarDrag);
+  drawAvatarCrop();
+}
+
+function avatarDrawMetrics() {
+  const { image, zoom, offsetX, offsetY } = avatarEditorState;
+  const canvasSize = AVATAR_OUTPUT_SIZE;
+  const baseScale = Math.max(canvasSize / image.naturalWidth, canvasSize / image.naturalHeight);
+  const scale = baseScale * zoom;
+  const width = image.naturalWidth * scale;
+  const height = image.naturalHeight * scale;
+  return {
+    width,
+    height,
+    x: (canvasSize - width) / 2 + offsetX,
+    y: (canvasSize - height) / 2 + offsetY
+  };
+}
+
+function clampAvatarOffsets() {
+  if (!avatarEditorState) return;
+  const { image, zoom } = avatarEditorState;
+  const baseScale = Math.max(AVATAR_OUTPUT_SIZE / image.naturalWidth, AVATAR_OUTPUT_SIZE / image.naturalHeight);
+  const width = image.naturalWidth * baseScale * zoom;
+  const height = image.naturalHeight * baseScale * zoom;
+  const maxX = Math.max(0, (width - AVATAR_OUTPUT_SIZE) / 2);
+  const maxY = Math.max(0, (height - AVATAR_OUTPUT_SIZE) / 2);
+  avatarEditorState.offsetX = Math.max(-maxX, Math.min(maxX, avatarEditorState.offsetX));
+  avatarEditorState.offsetY = Math.max(-maxY, Math.min(maxY, avatarEditorState.offsetY));
+}
+
+function drawAvatarCrop() {
+  if (!avatarEditorState) return;
+  const canvas = document.querySelector('#avatar-crop-canvas');
+  const context = canvas?.getContext('2d');
+  if (!context) return;
+  const metrics = avatarDrawMetrics();
+  context.clearRect(0, 0, AVATAR_OUTPUT_SIZE, AVATAR_OUTPUT_SIZE);
+  context.drawImage(avatarEditorState.image, metrics.x, metrics.y, metrics.width, metrics.height);
+}
+
+function startAvatarDrag(event) {
+  if (!avatarEditorState) return;
+  avatarEditorState.dragging = true;
+  avatarEditorState.startX = event.clientX;
+  avatarEditorState.startY = event.clientY;
+  avatarEditorState.originX = avatarEditorState.offsetX;
+  avatarEditorState.originY = avatarEditorState.offsetY;
+  event.currentTarget.setPointerCapture?.(event.pointerId);
+}
+
+function moveAvatarDrag(event) {
+  if (!avatarEditorState?.dragging) return;
+  const stageRect = event.currentTarget.getBoundingClientRect();
+  const ratio = AVATAR_OUTPUT_SIZE / stageRect.width;
+  avatarEditorState.offsetX = avatarEditorState.originX + (event.clientX - avatarEditorState.startX) * ratio;
+  avatarEditorState.offsetY = avatarEditorState.originY + (event.clientY - avatarEditorState.startY) * ratio;
+  clampAvatarOffsets();
+  drawAvatarCrop();
+}
+
+function endAvatarDrag(event) {
+  if (!avatarEditorState) return;
+  avatarEditorState.dragging = false;
+  event.currentTarget.releasePointerCapture?.(event.pointerId);
+}
+
+function canvasToWebpBlob(canvas, quality = 0.86) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('No se pudo procesar la fotografía.')), 'image/webp', quality);
+  });
+}
+
+function setAvatarProgress(value) {
+  const normalized = Math.max(0, Math.min(100, Math.round(value)));
+  const label = document.querySelector('#avatar-progress-label');
+  const bar = document.querySelector('#avatar-progress-bar');
+  if (label) label.textContent = `${normalized}%`;
+  if (bar) bar.style.width = `${normalized}%`;
+}
+
+async function saveAvatarImage() {
+  if (!avatarEditorState || !state.user) return;
+  const saveButton = document.querySelector('#avatar-save');
+  const cancelButton = document.querySelector('#avatar-cancel');
+  const progress = document.querySelector('#avatar-upload-progress');
+  const canvas = document.querySelector('#avatar-crop-canvas');
+  saveButton.disabled = true;
+  cancelButton.disabled = true;
+  progress?.classList.remove('hide');
+  setAvatarProgress(15);
+
+  try {
+    const blob = await canvasToWebpBlob(canvas);
+    setAvatarProgress(35);
+    const filePath = `${state.user.id}/avatar.webp`;
+    const { error: uploadError } = await db.storage
+      .from('avatars')
+      .upload(filePath, blob, { contentType: 'image/webp', upsert: true, cacheControl: '3600' });
+    if (uploadError) throw uploadError;
+
+    setAvatarProgress(75);
+    const { data: publicData } = db.storage.from('avatars').getPublicUrl(filePath);
+    const publicUrl = `${publicData.publicUrl}?v=${Date.now()}`;
+    const { data: profile, error: profileError } = await db
+      .from('profiles')
+      .update({ avatar_url: publicUrl })
+      .eq('id', state.user.id)
+      .select()
+      .single();
+    if (profileError) throw profileError;
+
+    setAvatarProgress(100);
+    state.profile = profile;
+    const preview = document.querySelector('#profile-photo-preview');
+    if (preview) preview.src = publicUrl;
+    await new Promise(resolve => setTimeout(resolve, 250));
+    closeAvatarEditor();
+    showToast('Fotografía actualizada correctamente.', 'success');
+    route();
+  } catch (error) {
+    console.error('Avatar upload error:', error);
+    showToast(error?.message?.includes('Bucket not found')
+      ? 'Primero crea el bucket avatars en Supabase.'
+      : 'No se pudo subir la fotografía. Revisa la configuración de Storage.', 'error');
+    if (saveButton) saveButton.disabled = false;
+    if (cancelButton) cancelButton.disabled = false;
+  }
+}
+
+function closeAvatarEditor() {
+  document.querySelector('#avatar-editor')?.remove();
+  document.body.classList.remove('modal-open');
+  if (avatarEditorState?.objectUrl) URL.revokeObjectURL(avatarEditorState.objectUrl);
+  avatarEditorState = null;
 }
 
 async function updateProfile(event) {
@@ -2361,8 +2598,7 @@ async function updateProfile(event) {
   const { data, error } = await db
     .from('profiles')
     .update({
-      full_name: String(form.get('fullName')).trim(),
-      avatar_url: String(form.get('avatarUrl')).trim() || null
+      full_name: String(form.get('fullName')).trim()
     })
     .eq('id', state.user.id)
     .select()

@@ -1,10 +1,10 @@
-const CACHE = 'aula-compas-v6-0-6-profile';
+const CACHE = 'aula-compas-v6-0-7-avatar';
 const STATIC_ASSETS = [
   './',
   './index.html',
   './404.html',
-  './styles.css?v=6.0.1',
-  './app.js?v=6.0.1',
+  './styles.css?v=6.0.7',
+  './app.js?v=6.0.7',
   './bootstrap.js?v=6.0.1',
   './supabase-config.js?v=6.0.1',
   './manifest.json',
