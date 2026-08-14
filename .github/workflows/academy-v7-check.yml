@@ -1,0 +1,40 @@
+name: Compas Academy V7 checks
+
+on:
+  push:
+    branches:
+      - feature/compas-academy-evolution-v7
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate JavaScript
+        run: |
+          node --check app.js
+          node --check academy-v7.js
+          node --check bootstrap.js
+          node --check sw.js
+
+      - name: Validate manifest
+        run: node -e "JSON.parse(require('fs').readFileSync('manifest.json','utf8')); console.log('manifest ok')"
+
+      - name: Validate Academy assets
+        run: |
+          test -f compas-academia.svg
+          test -f compas-evolution.svg
+          test -f academy-v7-vars.css
+          test -f academy-v7.css
+          test -f 14-compas-academy-evolution.sql
+          grep -q "academy-v7.js" bootstrap.js
+          grep -q "academy-v7.css" index.html
+          grep -q "aula.proyectocompas.com" CNAME
