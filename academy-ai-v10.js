@@ -10,6 +10,7 @@
   let panelOpen = false;
   let messages = [];
   let busy = false;
+  let historyLoading = false;
 
   const esc = value => typeof escapeHtml === 'function' ? escapeHtml(String(value ?? '')) : String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
   const userId = () => state?.user?.id || 'guest';
@@ -76,7 +77,8 @@
   }
 
   async function loadHistory() {
-    if (!state?.session || !getSessionToken()) return;
+    if (!state?.session || !getSessionToken() || historyLoading) return;
+    historyLoading = true;
     try {
       const data = await api('GET');
       messages = Array.isArray(data.messages) ? data.messages.map(m => ({
@@ -88,6 +90,8 @@
     } catch (error) {
       console.warn('Tutor IA history:', error);
       if (/sesión|pertenece|venció/i.test(error.message || '')) setSessionToken('');
+    } finally {
+      historyLoading = false;
     }
   }
 
@@ -112,7 +116,7 @@
 
   function chatBody(compact = false) {
     const initial = messages.length ? messages.map(messageMarkup).join('') : `<div class="tutor-v10-welcome"><span>${ICON}</span><h3>Hola, soy tu Tutor IA Compás</h3><p>Puedo ayudarte a entender una lección, practicar conceptos y aplicar lo aprendido en Compás One, CRM, marketing, Meta Ads, IA y automatización.</p></div>`;
-    return `<div class="tutor-v10-context"><span>Contexto actual</span><strong>${esc(contextLabel())}</strong></div><div class="tutor-v10-prompts">${quickPrompts()}</div><div class="tutor-v10-messages" data-tutor-messages>${initial}</div>${consentMarkup()}<form class="tutor-v10-form" data-tutor-form><textarea rows="${compact ? 2 : 3}" maxlength="4000" placeholder="Pregunta sobre tu curso, una herramienta o cómo aplicar lo aprendido…" data-tutor-input></textarea><button type="submit" aria-label="Enviar pregunta" ${busy ? 'disabled' : ''}>${busy ? '<span class="tutor-v10-loader"></span>' : SEND_ICON}</button></form><small class="tutor-v10-note">El Tutor IA puede equivocarse. Verifica decisiones importantes y solicita apoyo humano cuando lo necesites.</small>`;
+    return `<div class="tutor-v10-context"><span>Contexto actual</span><strong>${esc(contextLabel())}</strong></div><div class="tutor-v10-prompts">${quickPrompts()}</div><div class="tutor-v10-messages" data-tutor-messages>${initial}</div>${consentMarkup()}<form class="tutor-v10-form" data-tutor-form><textarea rows="${compact ? 2 : 3}" maxlength="1200" placeholder="Pregunta sobre tu curso, una herramienta o cómo aplicar lo aprendido…" data-tutor-input></textarea><button type="submit" aria-label="Enviar pregunta" ${busy ? 'disabled' : ''}>${busy ? '<span class="tutor-v10-loader"></span>' : SEND_ICON}</button></form><small class="tutor-v10-note">El Tutor IA puede equivocarse. Verifica decisiones importantes y solicita apoyo humano cuando lo necesites.</small>`;
   }
 
   function renderFullTutor() {
@@ -120,7 +124,6 @@
     if (!page) return;
     page.innerHTML = `<section class="tutor-v10-page"><header class="tutor-v10-hero"><div><span class="eyebrow">IA conectada con Compás One</span><h1>Tutor IA Compás</h1><p>Tu asistente de aprendizaje dentro de Academy. Conserva el contexto del curso y utiliza el mismo motor inteligente de Proyecto Compás.</p></div><span class="tutor-v10-hero-icon">${ICON}</span></header><section class="tutor-v10-layout"><article class="tutor-v10-chat glass">${chatBody(false)}</article><aside class="tutor-v10-side"><article><span>${ICON}</span><h3>¿En qué puede ayudarte?</h3><ul><li>Explicar conceptos paso a paso.</li><li>Crear ejemplos y ejercicios.</li><li>Relacionar la teoría con Compás One.</li><li>Prepararte para una evaluación.</li></ul></article><article><h3>Privacidad y seguridad</h3><p>Tu identidad se valida con la sesión de Academy. La clave del motor de IA nunca se expone en el navegador.</p></article></aside></section></section>`;
     bindChat(page);
-    loadHistory();
   }
 
   function ensurePanel() {
@@ -216,7 +219,13 @@
   }
 
   function injectNavigation() {
-    if (!state?.session) return;
+    if (!state?.session) {
+      document.querySelector('.tutor-v10-fab')?.remove();
+      document.querySelector('.tutor-v10-panel-shell')?.remove();
+      document.body.classList.remove('tutor-panel-open');
+      panelOpen = false;
+      return;
+    }
     const nav = document.querySelector('.sidebar-nav');
     if (nav && !nav.querySelector('[data-tutor-nav]')) {
       const link = document.createElement('a');
@@ -227,6 +236,10 @@
       nav.insertBefore(link, admin || null);
     }
     document.querySelectorAll('[data-tutor-nav]').forEach(link => link.classList.toggle('active', location.hash.startsWith('#tutor')));
+    if (location.hash.startsWith('#tutor')) {
+      const heading = document.querySelector('.topbar-heading strong');
+      if (heading) heading.textContent = 'Tutor IA';
+    }
 
     if (!document.querySelector('.tutor-v10-fab')) {
       const fab = document.createElement('button');
@@ -256,6 +269,7 @@
         renderShell('tutor');
         renderFullTutor();
         injectNavigation();
+        loadHistory();
         return;
       }
       if (page !== 'tutor') lastContextHash = location.hash || '#home';
