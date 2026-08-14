@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Academia Compás">
+  <g fill="none" stroke="#2A4B68" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="512" cy="512" r="326" stroke-width="34"/>
+    <circle cx="512" cy="512" r="282" stroke-width="12" opacity="0.72"/>
+  </g>
+  <g fill="#2A4B68">
+    <path d="M512 92C528 126 545 168 554 207C527 202 497 202 470 207C479 168 496 126 512 92Z"/>
+    <path d="M512 932C496 898 479 856 470 817C497 822 527 822 554 817C545 856 528 898 512 932Z"/>
+    <path d="M92 512C126 496 168 479 207 470C202 497 202 527 207 554C168 545 126 528 92 512Z"/>
+    <path d="M932 512C898 528 856 545 817 554C822 527 822 497 817 470C856 479 898 496 932 512Z"/>
+  </g>
+  <path d="M130 692C254 836 575 789 790 603C867 537 922 458 946 376" fill="none" stroke="#2F6B57" stroke-width="30" stroke-linecap="round"/>
+  <path d="M760 256C810 243 852 247 889 265" fill="none" stroke="#2F6B57" stroke-width="20" stroke-linecap="round"/>
+  <circle cx="918" cy="279" r="31" fill="#C7A62A"/>
+  <g id="academia" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M512 372L683 456Q698 464 683 473L526 552Q512 560 498 552L341 473Q326 464 341 456L512 372Z" fill="#2A4B68"/>
+    <path d="M390 504V574Q390 592 406 602Q512 664 618 602Q634 592 634 574V504L526 558Q512 566 498 558L390 504Z" fill="#6F8CA5"/>
+    <path d="M684 469V579" fill="none" stroke="#2A4B68" stroke-width="14"/>
+    <circle cx="684" cy="598" r="19" fill="#C7A62A"/>
+    <path d="M672 617H696L705 657Q706 665 697 665H671Q662 665 663 657L672 617Z" fill="#2F6B57"/>
+  </g>
+</svg>
