@@ -5,7 +5,7 @@
     app.innerHTML = `
       <main class="login-screen">
         <section class="login-card glass loading-card">
-          <img class="official-lockup" src="logo-completo-oficial.png" alt="Proyecto Compás">
+          <img class="official-lockup" src="compas-academia.svg" alt="Compás Academy">
           <h1>${title}</h1>
           <p>${message}</p>
           ${showActions ? `
@@ -28,32 +28,24 @@
       }, timeout);
 
       script.src = src;
-      script.async = true;
+      script.async = false;
       script.crossOrigin = 'anonymous';
-
-      script.onload = () => {
-        clearTimeout(timer);
-        resolve();
-      };
-
+      script.onload = () => { clearTimeout(timer); resolve(); };
       script.onerror = () => {
         clearTimeout(timer);
         script.remove();
         reject(new Error(`No se pudo cargar ${src}`));
       };
-
       document.head.appendChild(script);
     });
   }
 
   async function loadSupabaseLibrary() {
     if (window.supabase?.createClient) return;
-
     const sources = [
       'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
       'https://unpkg.com/@supabase/supabase-js@2'
     ];
-
     let lastError;
     for (const src of sources) {
       try {
@@ -65,53 +57,33 @@
         lastError = error;
       }
     }
-
     throw lastError || new Error('No fue posible cargar Supabase.');
   }
 
   async function start() {
-    renderStatus('Aula Compás', 'Preparando tu acceso…');
-
+    renderStatus('Compás Academy', 'Preparando tu acceso…');
     try {
       if (!window.SUPABASE_CONFIG?.url || !window.SUPABASE_CONFIG?.publishableKey) {
         throw new Error('Falta la configuración pública de Supabase.');
       }
-
       await loadSupabaseLibrary();
-      await loadScript(`app.js?v=6.0.13`);
+      await loadScript('app.js?v=6.0.15');
+      await loadScript('academy-v7.js?v=7.0.0');
 
-      // app.js se encarga de reemplazar la pantalla de carga.
       setTimeout(() => {
-        const stillLoading = document.querySelector('.loading-card');
-        if (stillLoading) {
-          renderStatus(
-            'No pudimos iniciar el aula',
-            'La aplicación tardó más de lo esperado. Abre el diagnóstico para identificar el punto exacto.',
-            true
-          );
+        if (document.querySelector('.loading-card')) {
+          renderStatus('No pudimos iniciar la academia', 'La aplicación tardó más de lo esperado. Abre el diagnóstico para identificar el punto exacto.', true);
         }
       }, 15000);
     } catch (error) {
       console.error('Error de inicio:', error);
-      renderStatus(
-        'No pudimos cargar Aula Compás',
-        'La conexión de la librería o la versión guardada en el navegador impidió iniciar la página.',
-        true
-      );
+      renderStatus('No pudimos cargar Compás Academy', 'La conexión o la versión guardada en el navegador impidió iniciar la página.', true);
     }
   }
 
-  window.addEventListener('error', event => {
-    console.error('Error global:', event.error || event.message);
-  });
+  window.addEventListener('error', event => console.error('Error global:', event.error || event.message));
+  window.addEventListener('unhandledrejection', event => console.error('Promesa rechazada:', event.reason));
 
-  window.addEventListener('unhandledrejection', event => {
-    console.error('Promesa rechazada:', event.reason);
-  });
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', start, { once: true });
-  } else {
-    start();
-  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
+  else start();
 })();
