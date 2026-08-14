@@ -1,4 +1,4 @@
-const CACHE = 'compas-academy-v9.0.0-dashboard';
+const CACHE = 'compas-academy-v10.0.0-tutor-ia';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -8,11 +8,13 @@ const STATIC_ASSETS = [
   './academy-v7.css?v=7.0.0',
   './academy-premium.css?v=8.0.0',
   './academy-dashboard-v9.css?v=9.0.0',
+  './academy-ai-v10.css?v=10.0.0',
   './app.js?v=6.0.15',
   './academy-v7.js?v=7.0.0',
   './academy-premium.js?v=8.0.0',
   './academy-dashboard-v9.js?v=9.0.0',
-  './bootstrap.js?v=9.0.0',
+  './academy-ai-v10.js?v=10.0.0',
+  './bootstrap.js?v=10.0.0',
   './supabase-config.js?v=7.0.0',
   './manifest.json',
   './compas-academia.svg',
