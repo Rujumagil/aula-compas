@@ -69,6 +69,7 @@
       await loadSupabaseLibrary();
       await loadScript('app.js?v=6.0.15');
       await loadScript('academy-v7.js?v=7.0.0');
+      await loadScript('academy-dashboard-v9.js?v=9.0.0');
 
       setTimeout(() => {
         if (document.querySelector('.loading-card')) {
