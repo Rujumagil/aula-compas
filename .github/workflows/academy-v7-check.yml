@@ -1,9 +1,9 @@
-name: Compas Academy Premium V8 checks
+name: Compas Academy Dashboard V9 checks
 
 on:
   push:
     branches:
-      - feature/compas-academy-evolution-v7
+      - feature/dashboard-premium-v9
   pull_request:
     branches:
       - main
@@ -23,6 +23,7 @@ jobs:
           node --check app.js
           node --check academy-v7.js
           node --check academy-premium.js
+          node --check academy-dashboard-v9.js
           node --check bootstrap.js
           node --check sw.js
 
@@ -37,10 +38,14 @@ jobs:
           test -f academy-v7.css
           test -f academy-premium.css
           test -f academy-premium.js
+          test -f academy-dashboard-v9.css
+          test -f academy-dashboard-v9.js
           test -f 14-compas-academy-evolution.sql
           grep -q "academy-v7.js" bootstrap.js
+          grep -q "academy-dashboard-v9.js" bootstrap.js
           grep -q "academy-v7.css" index.html
           grep -q "academy-premium.css" index.html
+          grep -q "academy-dashboard-v9.css" index.html
           grep -q "academy-premium.js" index.html
-          grep -q "compas-academy-v8.0.0-premium" sw.js
+          grep -q "compas-academy-v9.0.0-dashboard" sw.js
           grep -q "aula.proyectocompas.com" CNAME
