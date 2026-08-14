@@ -1,4 +1,4 @@
-name: Compas Academy V7 checks
+name: Compas Academy Premium V8 checks
 
 on:
   push:
@@ -22,6 +22,7 @@ jobs:
         run: |
           node --check app.js
           node --check academy-v7.js
+          node --check academy-premium.js
           node --check bootstrap.js
           node --check sw.js
 
@@ -34,7 +35,12 @@ jobs:
           test -f compas-evolution.svg
           test -f academy-v7-vars.css
           test -f academy-v7.css
+          test -f academy-premium.css
+          test -f academy-premium.js
           test -f 14-compas-academy-evolution.sql
           grep -q "academy-v7.js" bootstrap.js
           grep -q "academy-v7.css" index.html
+          grep -q "academy-premium.css" index.html
+          grep -q "academy-premium.js" index.html
+          grep -q "compas-academy-v8.0.0-premium" sw.js
           grep -q "aula.proyectocompas.com" CNAME
