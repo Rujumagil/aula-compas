@@ -60,6 +60,7 @@ jobs:
           test -f 20-academy-assessment-rpc-hardening.sql
           test -f 21-academy-assessment-admin.sql
           test -f 22-academy-verifiable-certificates.sql
+          test -f 23-academy-certificate-issuance-fix.sql
           grep -q "academy-assessments-v14.js?v=14.0.0" bootstrap.js
           grep -q "academy-assessment-admin-v15.js?v=15.0.0" bootstrap.js
           grep -q "academy-certificates-v16.js?v=16.0.0" bootstrap.js
@@ -79,4 +80,5 @@ jobs:
           grep -q "revoke insert, update, delete on public.certificates" 22-academy-verifiable-certificates.sql
           grep -q "certificate_public_registry" 22-academy-verifiable-certificates.sql
           grep -q "security invoker" 22-academy-verifiable-certificates.sql
+          grep -q "cert_found" 23-academy-certificate-issuance-fix.sql
           grep -q "aula.proyectocompas.com" CNAME
