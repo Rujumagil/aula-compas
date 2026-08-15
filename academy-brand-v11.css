@@ -1,0 +1,58 @@
+/* Compás Academy · Brand Assets V11
+   Mantiene geometría y proporciones del símbolo oficial recibido. */
+img[data-academy-brand-v11="official"] {
+  object-fit: contain !important;
+  object-position: center !important;
+  aspect-ratio: 1 / 1;
+  filter: none !important;
+  transform: none;
+  image-rendering: auto;
+}
+
+.sidebar .brand img[data-academy-brand-v11="official"] {
+  width: 58px !important;
+  height: 58px !important;
+  padding: 7px !important;
+  border-radius: 16px !important;
+  background: rgba(255,255,255,.96) !important;
+  border: 1px solid rgba(255,255,255,.22) !important;
+  box-shadow: 0 12px 28px rgba(8,28,46,.18) !important;
+}
+
+.official-lockup[data-academy-brand-v11="official"],
+.loading-card img[data-academy-brand-v11="official"] {
+  width: 92px !important;
+  height: 92px !important;
+  padding: 8px !important;
+  border-radius: 24px !important;
+  background: rgba(255,255,255,.88) !important;
+  border: 1px solid rgba(31,75,109,.10) !important;
+  box-shadow: 0 16px 38px rgba(19,52,75,.12) !important;
+}
+
+.academy-orbit-card img[data-academy-brand-v11="official"] {
+  width: 96px !important;
+  height: 96px !important;
+  padding: 4px !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.public-wordmark img[data-academy-brand-v11="official"],
+.academy-public-header img[data-academy-brand-v11="official"] {
+  width: 48px !important;
+  height: 48px !important;
+  padding: 4px !important;
+  background: rgba(255,255,255,.84) !important;
+  border-radius: 14px !important;
+}
+
+.dash-v9-empty-logo img[data-academy-brand-v11="official"],
+.dash-v9-welcome aside img[data-academy-brand-v11="official"] {
+  max-width: 110px !important;
+  max-height: 110px !important;
+  padding: 8px !important;
+  background: rgba(255,255,255,.68) !important;
+  border-radius: 24px !important;
+}
