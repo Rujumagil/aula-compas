@@ -30,13 +30,15 @@ jobs:
           node --check academy-brand-v11.js
           node --check academy-assessments-v14.js
           node --check academy-assessment-admin-v15.js
+          node --check academy-certificates-v16.js
+          node --check verificar-certificado-v16.js
           node --check bootstrap.js
           node --check sw.js
 
       - name: Validate manifest
         run: node -e "JSON.parse(require('fs').readFileSync('manifest.json','utf8')); console.log('manifest ok')"
 
-      - name: Validate Academy assets and assessment security
+      - name: Validate Academy assets, assessment and certificate security
         run: |
           test -s brand/academy/favicon.png
           test -s brand/academy/logo.png
@@ -46,6 +48,10 @@ jobs:
           test -f academy-assessments-v14.js
           test -f academy-assessment-admin-v15.css
           test -f academy-assessment-admin-v15.js
+          test -f academy-certificates-v16.css
+          test -f academy-certificates-v16.js
+          test -f verificar-certificado.html
+          test -f verificar-certificado-v16.js
           test -f 15-compas-academy-p0-security.sql
           test -f 16-academy-assessments.sql
           test -f 17-academy-assessments-option-security.sql
@@ -53,13 +59,15 @@ jobs:
           test -f 19-academy-starter-assessment.sql
           test -f 20-academy-assessment-rpc-hardening.sql
           test -f 21-academy-assessment-admin.sql
+          test -f 22-academy-verifiable-certificates.sql
           grep -q "academy-assessments-v14.js?v=14.0.0" bootstrap.js
           grep -q "academy-assessment-admin-v15.js?v=15.0.0" bootstrap.js
-          grep -q "academy-assessments-v14.css?v=14.0.0" index.html
-          grep -q "academy-assessment-admin-v15.css?v=15.0.0" index.html
-          grep -q "bootstrap.js?v=15.0.0" index.html
-          grep -q "compas-academy-v15.0.0-assets" sw.js
-          grep -q "academy-assessment-admin-v15.js?v=15.0.0" sw.js
+          grep -q "academy-certificates-v16.js?v=16.0.0" bootstrap.js
+          grep -q "academy-certificates-v16.css?v=16.0.0" index.html
+          grep -q "bootstrap.js?v=16.0.0" index.html
+          grep -q "compas-academy-v16.0.0-assets" sw.js
+          grep -q "academy-certificates-v16.js?v=16.0.0" sw.js
+          grep -q "verificar-certificado.html" sw.js
           grep -q "upgrade-insecure-requests" index.html
           grep -q "revoke all on public.assessment_options" 17-academy-assessments-option-security.sql
           grep -q "revoke insert, update, delete on public.assessment_attempts" 18-academy-assessment-engine.sql
@@ -67,4 +75,8 @@ jobs:
           grep -q "private.get_assessment_manager_options_impl" 21-academy-assessment-admin.sql
           grep -q "grade_assessment_attempt" 21-academy-assessment-admin.sql
           grep -q "security invoker" 21-academy-assessment-admin.sql
+          grep -q "private.issue_academy_certificate_impl" 22-academy-verifiable-certificates.sql
+          grep -q "revoke insert, update, delete on public.certificates" 22-academy-verifiable-certificates.sql
+          grep -q "certificate_public_registry" 22-academy-verifiable-certificates.sql
+          grep -q "security invoker" 22-academy-verifiable-certificates.sql
           grep -q "aula.proyectocompas.com" CNAME
