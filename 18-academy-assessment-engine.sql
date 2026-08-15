@@ -124,6 +124,7 @@ declare
   correct_ids uuid[];
   selected_ids uuid[];
   exact_match boolean;
+  has_answer boolean;
   total_points numeric := 0;
   earned_points numeric := 0;
   has_manual boolean := false;
@@ -151,10 +152,11 @@ begin
 
     select * into answer_row from public.assessment_answers
     where attempt_id=at.id and question_id=q.id;
+    has_answer := found;
 
     if q.question_type='short_text' then
       has_manual := true;
-      if found then
+      if has_answer then
         update public.assessment_answers set is_correct=null, points_awarded=null where id=answer_row.id;
       end if;
       continue;
@@ -163,13 +165,13 @@ begin
     select coalesce(array_agg(id order by id),'{}'::uuid[]) into correct_ids
     from public.assessment_options where question_id=q.id and is_correct=true;
 
-    selected_ids := case when found then coalesce(answer_row.selected_option_ids,'{}'::uuid[]) else '{}'::uuid[] end;
-    select (
-      coalesce((select array_agg(x order by x) from unnest(selected_ids) x),'{}'::uuid[])
-      = coalesce((select array_agg(x order by x) from unnest(correct_ids) x),'{}'::uuid[])
-    ) into exact_match;
+    selected_ids := case when has_answer then coalesce(answer_row.selected_option_ids,'{}'::uuid[]) else '{}'::uuid[] end;
+    exact_match := has_answer
+      and cardinality(correct_ids)>0
+      and coalesce((select array_agg(x order by x) from unnest(selected_ids) x),'{}'::uuid[])
+          = coalesce((select array_agg(x order by x) from unnest(correct_ids) x),'{}'::uuid[]);
 
-    if found then
+    if has_answer then
       update public.assessment_answers
       set is_correct=exact_match, points_awarded=case when exact_match then q.points else 0 end
       where id=answer_row.id;
