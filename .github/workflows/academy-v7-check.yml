@@ -33,6 +33,7 @@ jobs:
           node --check academy-certificates-v16.js
           node --check academy-notifications-v17.js
           node --check academy-admin-dashboard-v18.js
+          node --check academy-onboarding-v19.js
           node --check verificar-certificado-v16.js
           node --check bootstrap.js
           node --check sw.js
@@ -51,7 +52,8 @@ jobs:
           test -f academy-certificates-v16.css
           test -f academy-notifications-v17.css
           test -f academy-admin-dashboard-v18.css
-          test -f academy-admin-dashboard-v18.js
+          test -f academy-onboarding-v19.css
+          test -f academy-onboarding-v19.js
           test -f verificar-certificado.html
           test -f 15-compas-academy-p0-security.sql
           test -f 16-academy-assessments.sql
@@ -64,18 +66,21 @@ jobs:
           test -f 23-academy-certificate-issuance-fix.sql
           test -f 24-academy-notifications.sql
           test -f 25-academy-admin-dashboard.sql
+          test -f 26-academy-onboarding.sql
           grep -q "academy-assessments-v14.js?v=14.0.0" bootstrap.js
           grep -q "academy-assessment-admin-v15.js?v=15.0.0" bootstrap.js
           grep -q "academy-certificates-v16.js?v=16.0.0" bootstrap.js
           grep -q "academy-notifications-v17.js?v=17.0.0" bootstrap.js
           grep -q "academy-admin-dashboard-v18.js?v=18.0.0" bootstrap.js
-          grep -q "academy-admin-dashboard-v18.css?v=18.0.0" index.html
-          grep -q "bootstrap.js?v=18.0.0" index.html
-          grep -q "compas-academy-v18.0.0-assets" sw.js
-          grep -q "academy-admin-dashboard-v18.js?v=18.0.0" sw.js
-          grep -q "academy-admin-dashboard-v18.css?v=18.0.0" sw.js
+          grep -q "academy-onboarding-v19.js?v=19.0.0" bootstrap.js
+          grep -q "academy-onboarding-v19.css?v=19.0.0" index.html
+          grep -q "bootstrap.js?v=19.0.0" index.html
+          grep -q "compas-academy-v19.0.0-assets" sw.js
+          grep -q "academy-onboarding-v19.js?v=19.0.0" sw.js
+          grep -q "academy-onboarding-v19.css?v=19.0.0" sw.js
           grep -q "upgrade-insecure-requests" index.html
-          grep -q "get_academy_admin_dashboard" 25-academy-admin-dashboard.sql
-          grep -q "security invoker" 25-academy-admin-dashboard.sql
-          grep -q "revoke all on function public.get_academy_admin_dashboard" 25-academy-admin-dashboard.sql
+          grep -q "academy_onboarding_profiles" 26-academy-onboarding.sql
+          grep -q "enable row level security" 26-academy-onboarding.sql
+          grep -q "revoke all on table public.academy_onboarding_profiles from public, anon" 26-academy-onboarding.sql
+          grep -q "with check ((select auth.uid()) = user_id)" 26-academy-onboarding.sql
           grep -q "aula.proyectocompas.com" CNAME
