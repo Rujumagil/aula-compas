@@ -2,6 +2,12 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  <script>
+    if (location.protocol === 'http:' && location.hostname === 'aula.proyectocompas.com') {
+      location.replace('https://' + location.host + location.pathname + location.search + location.hash);
+    }
+  </script>
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#17344B">
   <meta name="description" content="Compás Academy: formación práctica premium en Compás One, CRM, marketing digital, Meta Ads, inteligencia artificial y automatización.">
