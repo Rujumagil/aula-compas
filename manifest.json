@@ -9,9 +9,15 @@
   "orientation": "any",
   "icons": [
     {
-      "src": "compas-academia.svg",
+      "src": "brand/academy/icon.svg?v=11.0.0",
       "sizes": "any",
       "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "brand/academy/favicon.png?v=11.0.0",
+      "sizes": "60x60",
+      "type": "image/png",
       "purpose": "any"
     }
   ]
