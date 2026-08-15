@@ -81,6 +81,7 @@
       await loadScript('academy-onboarding-v19.js?v=19.0.0');
       await loadScript('academy-ai-personalization-v20.js?v=20.0.0');
       await loadScript('academy-community-v21.js?v=21.0.0');
+      await loadScript('academy-accessibility-v22.js?v=22.0.0');
 
       setTimeout(() => {
         if (document.querySelector('.loading-card')) {
