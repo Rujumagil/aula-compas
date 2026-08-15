@@ -5,7 +5,7 @@
     app.innerHTML = `
       <main class="login-screen">
         <section class="login-card glass loading-card">
-          <img class="official-lockup" src="compas-academia.svg" alt="Compás Academy">
+          <img class="official-lockup" src="brand/academy/logo.png?v=11.0.0" alt="Compás Academy">
           <h1>${title}</h1>
           <p>${message}</p>
           ${showActions ? `
@@ -71,6 +71,7 @@
       await loadScript('academy-v7.js?v=7.0.0');
       await loadScript('academy-dashboard-v9.js?v=9.0.0');
       await loadScript('academy-ai-v10.js?v=10.0.0');
+      await loadScript('academy-brand-v11.js?v=11.0.0');
 
       setTimeout(() => {
         if (document.querySelector('.loading-card')) {
