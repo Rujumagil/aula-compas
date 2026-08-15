@@ -1,4 +1,4 @@
-const CACHE = 'compas-academy-v11.1.0-assets';
+const CACHE = 'compas-academy-v15.0.0-assets';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -10,13 +10,17 @@ const STATIC_ASSETS = [
   './academy-dashboard-v9.css?v=9.0.0',
   './academy-ai-v10.css?v=10.0.0',
   './academy-brand-v11.css?v=11.1.0',
+  './academy-assessments-v14.css?v=14.0.0',
+  './academy-assessment-admin-v15.css?v=15.0.0',
   './app.js?v=6.0.15',
   './academy-brand-v11.js?v=11.1.0',
   './academy-v7.js?v=7.0.0',
   './academy-premium.js?v=8.0.0',
   './academy-dashboard-v9.js?v=9.0.0',
   './academy-ai-v10.js?v=10.0.0',
-  './bootstrap.js?v=11.1.0',
+  './academy-assessments-v14.js?v=14.0.0',
+  './academy-assessment-admin-v15.js?v=15.0.0',
+  './bootstrap.js?v=15.0.0',
   './supabase-config.js?v=7.0.0',
   './manifest.json?v=11.1.0',
   './brand/academy/favicon.png?v=11.1.0',
