@@ -75,6 +75,7 @@
       await loadScript('academy-ai-v10.js?v=10.0.0');
       await loadScript('academy-assessments-v14.js?v=14.0.0');
       await loadScript('academy-assessment-admin-v15.js?v=15.0.0');
+      await loadScript('academy-certificates-v16.js?v=16.0.0');
 
       setTimeout(() => {
         if (document.querySelector('.loading-card')) {
