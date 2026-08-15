@@ -34,7 +34,7 @@ jobs:
       - name: Validate manifest
         run: node -e "JSON.parse(require('fs').readFileSync('manifest.json','utf8')); console.log('manifest ok')"
 
-      - name: Validate Academy assets and P0 security
+      - name: Validate Academy assets, P0 and P1 assessment security
         run: |
           test -s brand/academy/favicon.png
           test -s brand/academy/logo.png
@@ -53,6 +53,8 @@ jobs:
           test -f academy-brand-v11.js
           test -f 14-compas-academy-evolution.sql
           test -f 15-compas-academy-p0-security.sql
+          test -f 16-academy-assessments.sql
+          test -f 17-academy-assessments-option-security.sql
           grep -q "academy-brand-v11.js?v=11.1.0" bootstrap.js
           grep -q "academy-v7.js" bootstrap.js
           grep -q "academy-dashboard-v9.js" bootstrap.js
@@ -70,4 +72,7 @@ jobs:
           grep -q "upgrade-insecure-requests" index.html
           grep -q "location.protocol === 'http:'" index.html
           grep -q "revoke execute on function public.admin_set_user_role" 15-compas-academy-p0-security.sql
+          grep -q "create table if not exists public.assessments" 16-academy-assessments.sql
+          grep -q "revoke all on public.assessment_options" 17-academy-assessments-option-security.sql
+          grep -q "grant select(id,question_id,label,position,created_at)" 17-academy-assessments-option-security.sql
           grep -q "aula.proyectocompas.com" CNAME
