@@ -96,7 +96,8 @@ as $$
 declare
   course_title text;
 begin
-  if new.status = 'active' and (tg_op = 'INSERT' or old.status is distinct from new.status) then
+  if new.status = 'active'
+     and (tg_op = 'INSERT' or (tg_op = 'UPDATE' and old.status is distinct from new.status)) then
     select c.title into course_title from public.courses c where c.id = new.course_id;
     perform private.enqueue_academy_notification(
       new.user_id,
@@ -131,7 +132,7 @@ declare
   course_id_value uuid;
 begin
   if new.graded_at is not null
-     and (tg_op = 'INSERT' or old.graded_at is distinct from new.graded_at or old.passed is distinct from new.passed) then
+     and (tg_op = 'INSERT' or (tg_op = 'UPDATE' and (old.graded_at is distinct from new.graded_at or old.passed is distinct from new.passed))) then
     select a.title, a.course_id into assessment_title, course_id_value
       from public.assessments a where a.id = new.assessment_id;
 
@@ -141,7 +142,7 @@ begin
       case when new.passed then 'Evaluación aprobada' else 'Evaluación por reforzar' end,
       coalesce(assessment_title, 'Tu evaluación') ||
         case when new.passed then ' fue aprobada. Sigue avanzando.' else ' necesita otro intento para alcanzar el mínimo.' end,
-      '#course/' || course_id_value::text,
+      case when course_id_value is null then '#courses' else '#course/' || course_id_value::text end,
       'assessment',
       new.assessment_id,
       'attempt:' || new.id::text || ':graded:' || coalesce(new.passed::text,'pending')
@@ -196,16 +197,17 @@ security definer
 set search_path = ''
 as $$
 declare
-  enrollment_row record;
+  enrollment_item record;
 begin
-  if new.status = 'published' and (tg_op = 'INSERT' or old.status is distinct from new.status) then
-    for enrollment_row in
+  if new.status = 'published'
+     and (tg_op = 'INSERT' or (tg_op = 'UPDATE' and old.status is distinct from new.status)) then
+    for enrollment_item in
       select e.user_id
       from public.enrollments e
       where e.course_id = new.course_id and e.status = 'active'
     loop
       perform private.enqueue_academy_notification(
-        enrollment_row.user_id,
+        enrollment_item.user_id,
         'assessment_available',
         'Nueva evaluación disponible',
         new.title || ' ya está disponible dentro de tu curso.',
@@ -234,7 +236,10 @@ security definer
 set search_path = ''
 as $$
 declare
-  row_item record;
+  enrollment_item record;
+  assessment_item record;
+  certificate_item record;
+  inactivity_item record;
   inserted_count integer := 0;
   was_inserted boolean;
   last_activity timestamptz;
@@ -244,7 +249,7 @@ begin
     raise exception 'No autorizado';
   end if;
 
-  for row_item in
+  for enrollment_item in
     select e.id enrollment_id, e.course_id, e.enrolled_at, c.title course_title
     from public.enrollments e
     join public.courses c on c.id = e.course_id
@@ -252,28 +257,28 @@ begin
   loop
     select private.enqueue_academy_notification(
       target_user, 'course_assigned', 'Curso disponible en tu ruta',
-      row_item.course_title || ' está disponible en Compás Academy.',
-      '#course/' || row_item.course_id::text, 'course', row_item.course_id,
-      'enrollment:' || row_item.enrollment_id::text || ':active'
+      enrollment_item.course_title || ' está disponible en Compás Academy.',
+      '#course/' || enrollment_item.course_id::text, 'course', enrollment_item.course_id,
+      'enrollment:' || enrollment_item.enrollment_id::text || ':active'
     ) into was_inserted;
     if was_inserted then inserted_count := inserted_count + 1; end if;
 
-    for row_item in
+    for assessment_item in
       select a.id assessment_id, a.title assessment_title, a.course_id
       from public.assessments a
-      where a.course_id = row_item.course_id and a.status = 'published'
+      where a.course_id = enrollment_item.course_id and a.status = 'published'
     loop
       select private.enqueue_academy_notification(
         target_user, 'assessment_available', 'Evaluación disponible',
-        row_item.assessment_title || ' está lista para responder.',
-        '#assessment/' || row_item.assessment_id::text, 'assessment', row_item.assessment_id,
-        'assessment:' || row_item.assessment_id::text || ':published'
+        assessment_item.assessment_title || ' está lista para responder.',
+        '#assessment/' || assessment_item.assessment_id::text, 'assessment', assessment_item.assessment_id,
+        'assessment:' || assessment_item.assessment_id::text || ':published'
       ) into was_inserted;
       if was_inserted then inserted_count := inserted_count + 1; end if;
     end loop;
   end loop;
 
-  for row_item in
+  for certificate_item in
     select cert.id certificate_id, cert.course_id, c.title course_title
     from public.certificates cert
     join public.courses c on c.id = cert.course_id
@@ -281,14 +286,14 @@ begin
   loop
     select private.enqueue_academy_notification(
       target_user, 'certificate_ready', 'Tu certificado está listo',
-      'Ya puedes validar y descargar tu certificado de ' || row_item.course_title || '.',
-      '#certificate/' || row_item.course_id::text, 'certificate', row_item.certificate_id,
-      'certificate:' || row_item.certificate_id::text || ':ready'
+      'Ya puedes validar y descargar tu certificado de ' || certificate_item.course_title || '.',
+      '#certificate/' || certificate_item.course_id::text, 'certificate', certificate_item.certificate_id,
+      'certificate:' || certificate_item.certificate_id::text || ':ready'
     ) into was_inserted;
     if was_inserted then inserted_count := inserted_count + 1; end if;
   end loop;
 
-  for row_item in
+  for inactivity_item in
     select e.id enrollment_id, e.course_id, e.enrolled_at, c.title course_title
     from public.enrollments e
     join public.courses c on c.id = e.course_id
@@ -306,20 +311,20 @@ begin
       )
   loop
     select greatest(
-      row_item.enrolled_at,
+      inactivity_item.enrolled_at,
       coalesce((select max(lp.updated_at)
         from public.lesson_progress lp
         join public.lessons l on l.id = lp.lesson_id
         join public.modules m on m.id = l.module_id
-        where lp.user_id = target_user and m.course_id = row_item.course_id), row_item.enrolled_at)
+        where lp.user_id = target_user and m.course_id = inactivity_item.course_id), inactivity_item.enrolled_at)
     ) into last_activity;
 
     if last_activity < now() - interval '7 days' then
       select private.enqueue_academy_notification(
         target_user, 'inactivity', 'Retoma tu ruta de aprendizaje',
-        'Han pasado varios días desde tu última actividad en ' || row_item.course_title || '.',
-        '#course/' || row_item.course_id::text, 'course', row_item.course_id,
-        'inactivity:' || row_item.enrollment_id::text || ':' || iso_week
+        'Han pasado varios días desde tu última actividad en ' || inactivity_item.course_title || '.',
+        '#course/' || inactivity_item.course_id::text, 'course', inactivity_item.course_id,
+        'inactivity:' || inactivity_item.enrollment_id::text || ':' || iso_week
       ) into was_inserted;
       if was_inserted then inserted_count := inserted_count + 1; end if;
     end if;
@@ -343,5 +348,18 @@ $$;
 
 revoke all on function public.refresh_academy_notifications() from public, anon;
 grant execute on function public.refresh_academy_notifications() to authenticated;
+
+-- Habilita eventos Realtime de esta tabla cuando la publicación existe.
+do $$
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    begin
+      alter publication supabase_realtime add table public.academy_notifications;
+    exception when duplicate_object then
+      null;
+    end;
+  end if;
+end;
+$$;
 
 commit;
