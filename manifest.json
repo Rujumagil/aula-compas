@@ -9,13 +9,13 @@
   "orientation": "any",
   "icons": [
     {
-      "src": "brand/academy/icon.svg?v=11.0.0",
+      "src": "brand/academy/icon.svg?v=11.1.0",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "brand/academy/favicon.png?v=11.0.0",
+      "src": "brand/academy/favicon.png?v=11.1.0",
       "sizes": "60x60",
       "type": "image/png",
       "purpose": "any"
