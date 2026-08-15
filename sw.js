@@ -1,4 +1,4 @@
-const CACHE = 'compas-academy-v10.0.0-tutor-ia';
+const CACHE = 'compas-academy-v11.0.0-brand';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -9,14 +9,20 @@ const STATIC_ASSETS = [
   './academy-premium.css?v=8.0.0',
   './academy-dashboard-v9.css?v=9.0.0',
   './academy-ai-v10.css?v=10.0.0',
+  './academy-brand-v11.css?v=11.0.0',
   './app.js?v=6.0.15',
   './academy-v7.js?v=7.0.0',
   './academy-premium.js?v=8.0.0',
   './academy-dashboard-v9.js?v=9.0.0',
   './academy-ai-v10.js?v=10.0.0',
-  './bootstrap.js?v=10.0.0',
+  './academy-brand-v11.js?v=11.0.0',
+  './bootstrap.js?v=11.0.0',
   './supabase-config.js?v=7.0.0',
-  './manifest.json',
+  './manifest.json?v=11.0.0',
+  './brand/academy/favicon.png?v=11.0.0',
+  './brand/academy/logo.png?v=11.0.0',
+  './brand/academy/apple-touch.png?v=11.0.0',
+  './brand/academy/icon.svg?v=11.0.0',
   './compas-academia.svg',
   './compas-evolution.svg',
   './diagnostico.html',
