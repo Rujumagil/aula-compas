@@ -1,9 +1,9 @@
-name: Compas Academy Tutor IA V10 checks
+name: Compas Academy Brand V11 checks
 
 on:
   push:
     branches:
-      - feature/tutor-ia-compas-one-v10
+      - feature/academy-brand-assets-v11
   pull_request:
     branches:
       - main
@@ -25,6 +25,7 @@ jobs:
           node --check academy-premium.js
           node --check academy-dashboard-v9.js
           node --check academy-ai-v10.js
+          node --check academy-brand-v11.js
           node --check bootstrap.js
           node --check sw.js
 
@@ -33,7 +34,10 @@ jobs:
 
       - name: Validate Academy assets
         run: |
-          test -f compas-academia.svg
+          test -s brand/academy/favicon.png
+          test -s brand/academy/logo.png
+          test -s brand/academy/apple-touch.png
+          test -s brand/academy/icon.svg
           test -f compas-evolution.svg
           test -f academy-v7-vars.css
           test -f academy-v7.css
@@ -43,14 +47,20 @@ jobs:
           test -f academy-dashboard-v9.js
           test -f academy-ai-v10.css
           test -f academy-ai-v10.js
+          test -f academy-brand-v11.css
+          test -f academy-brand-v11.js
           test -f 14-compas-academy-evolution.sql
           grep -q "academy-v7.js" bootstrap.js
           grep -q "academy-dashboard-v9.js" bootstrap.js
           grep -q "academy-ai-v10.js" bootstrap.js
+          grep -q "academy-brand-v11.js" bootstrap.js
           grep -q "academy-v7.css" index.html
           grep -q "academy-premium.css" index.html
           grep -q "academy-dashboard-v9.css" index.html
           grep -q "academy-ai-v10.css" index.html
-          grep -q "compas-academy-v10.0.0-tutor-ia" sw.js
-          grep -q "compas-academy/messages" academy-ai-v10.js
+          grep -q "academy-brand-v11.css" index.html
+          grep -q "brand/academy/favicon.png" index.html
+          grep -q "brand/academy/logo.png" index.html
+          grep -q "brand/academy/icon.svg" manifest.json
+          grep -q "compas-academy-v11.0.0-brand" sw.js
           grep -q "aula.proyectocompas.com" CNAME
