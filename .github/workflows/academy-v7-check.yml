@@ -87,9 +87,9 @@ jobs:
           grep -q "enable row level security" 26-academy-onboarding.sql
           grep -q "revoke all on table public.academy_onboarding_profiles from public, anon" 26-academy-onboarding.sql
           grep -q "with check ((select auth.uid()) = user_id)" 26-academy-onboarding.sql
-          grep -q "academyProfileContext" academy-ai-personalization-v20.js
           grep -q "academyLearningSignals" academy-ai-personalization-v20.js
-          grep -q "objective_text" academy-ai-personalization-v20.js
+          ! grep -q "academyProfileContext" academy-ai-personalization-v20.js
+          ! grep -q "objective_text" academy-ai-personalization-v20.js
           ! grep -q "email" academy-ai-personalization-v20.js
           ! grep -q "access_token" academy-ai-personalization-v20.js
           grep -q "aula.proyectocompas.com" CNAME
