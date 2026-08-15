@@ -1,9 +1,9 @@
-name: Compas Academy Brand V11 checks
+name: Compas Academy Assets V11.1 checks
 
 on:
   push:
     branches:
-      - feature/academy-brand-assets-v11
+      - feature/academy-assets-links-v11-1
   pull_request:
     branches:
       - main
@@ -21,6 +21,7 @@ jobs:
       - name: Validate JavaScript
         run: |
           node --check app.js
+          node --check data.js
           node --check academy-v7.js
           node --check academy-premium.js
           node --check academy-dashboard-v9.js
@@ -50,17 +51,18 @@ jobs:
           test -f academy-brand-v11.css
           test -f academy-brand-v11.js
           test -f 14-compas-academy-evolution.sql
+          grep -q "academy-brand-v11.js?v=11.1.0" bootstrap.js
           grep -q "academy-v7.js" bootstrap.js
           grep -q "academy-dashboard-v9.js" bootstrap.js
           grep -q "academy-ai-v10.js" bootstrap.js
-          grep -q "academy-brand-v11.js" bootstrap.js
           grep -q "academy-v7.css" index.html
           grep -q "academy-premium.css" index.html
           grep -q "academy-dashboard-v9.css" index.html
           grep -q "academy-ai-v10.css" index.html
-          grep -q "academy-brand-v11.css" index.html
-          grep -q "brand/academy/favicon.png" index.html
-          grep -q "brand/academy/logo.png" index.html
-          grep -q "brand/academy/icon.svg" manifest.json
-          grep -q "compas-academy-v11.0.0-brand" sw.js
+          grep -q "academy-brand-v11.css?v=11.1.0" index.html
+          grep -q "brand/academy/favicon.png?v=11.1.0" index.html
+          grep -q "brand/academy/logo.png?v=11.1.0" index.html
+          grep -q "brand/academy/icon.svg?v=11.1.0" manifest.json
+          grep -q "compas-academy-v11.1.0-assets" sw.js
+          grep -q "curso-compas.webp?v=11.1.0" sw.js
           grep -q "aula.proyectocompas.com" CNAME
