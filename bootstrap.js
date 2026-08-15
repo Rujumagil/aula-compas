@@ -79,6 +79,7 @@
       await loadScript('academy-notifications-v17.js?v=17.0.0');
       await loadScript('academy-admin-dashboard-v18.js?v=18.0.0');
       await loadScript('academy-onboarding-v19.js?v=19.0.0');
+      await loadScript('academy-ai-personalization-v20.js?v=20.0.0');
 
       setTimeout(() => {
         if (document.querySelector('.loading-card')) {
