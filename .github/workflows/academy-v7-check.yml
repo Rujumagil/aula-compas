@@ -28,6 +28,7 @@ jobs:
           node --check academy-dashboard-v9.js
           node --check academy-ai-v10.js
           node --check academy-brand-v11.js
+          node --check academy-assessments-v14.js
           node --check bootstrap.js
           node --check sw.js
 
@@ -51,14 +52,21 @@ jobs:
           test -f academy-ai-v10.js
           test -f academy-brand-v11.css
           test -f academy-brand-v11.js
+          test -f academy-assessments-v14.css
+          test -f academy-assessments-v14.js
           test -f 14-compas-academy-evolution.sql
           test -f 15-compas-academy-p0-security.sql
           test -f 16-academy-assessments.sql
           test -f 17-academy-assessments-option-security.sql
+          test -f 18-academy-assessment-engine.sql
+          test -f 19-academy-starter-assessment.sql
+          test -f 20-academy-assessment-rpc-hardening.sql
           grep -q "academy-brand-v11.js?v=11.1.0" bootstrap.js
           grep -q "academy-v7.js" bootstrap.js
           grep -q "academy-dashboard-v9.js" bootstrap.js
           grep -q "academy-ai-v10.js" bootstrap.js
+          grep -q "academy-assessments-v14.js?v=14.0.0" bootstrap.js
+          grep -q "academy-assessments-v14.css?v=14.0.0" index.html
           grep -q "academy-v7.css" index.html
           grep -q "academy-premium.css" index.html
           grep -q "academy-dashboard-v9.css" index.html
@@ -75,4 +83,10 @@ jobs:
           grep -q "create table if not exists public.assessments" 16-academy-assessments.sql
           grep -q "revoke all on public.assessment_options" 17-academy-assessments-option-security.sql
           grep -q "grant select(id,question_id,label,position,created_at)" 17-academy-assessments-option-security.sql
+          grep -q "revoke insert, update, delete on public.assessment_attempts" 18-academy-assessment-engine.sql
+          grep -q "start_assessment_attempt" 18-academy-assessment-engine.sql
+          grep -q "submit_assessment_attempt" 18-academy-assessment-engine.sql
+          grep -q "Checkpoint · Primeros pasos con Compás One" 19-academy-starter-assessment.sql
+          grep -q "private.start_assessment_attempt_impl" 20-academy-assessment-rpc-hardening.sql
+          grep -q "security invoker" 20-academy-assessment-rpc-hardening.sql
           grep -q "aula.proyectocompas.com" CNAME
