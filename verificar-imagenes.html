@@ -3,8 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Verificar imágenes — Aula Compás</title>
-  <link rel="stylesheet" href="styles.css?v=5.2.0">
+  <meta name="theme-color" content="#17344B">
+  <title>Verificar imágenes — Compás Academy</title>
+  <link rel="icon" type="image/png" href="brand/academy/favicon.png?v=11.1.0">
+  <link rel="apple-touch-icon" href="brand/academy/apple-touch.png?v=11.1.0">
+  <link rel="stylesheet" href="styles.css?v=6.0.15">
   <style>
     .verify-page{max-width:1200px;margin:auto;padding:30px}
     .verify-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px}
@@ -17,101 +20,50 @@
 </head>
 <body>
   <main class="verify-page">
-    <span class="eyebrow">Diagnóstico visual</span>
-    <h1 class="page-title">Imágenes de Aula Compás</h1>
-    <p class="page-subtitle">Todas estas imágenes deben mostrarse. En esta versión están en la raíz del repositorio y no requieren una carpeta assets.</p>
-    <p><a class="btn btn-primary" href="./">Regresar al aula</a> <a class="btn btn-secondary" href="limpiar-cache.html">Limpiar caché</a></p>
-    <section class="verify-grid"><article class="image-test">
-      <img src="curso-compas.webp?v=5.2.0" alt="curso-compas.webp">
-      <strong>curso-compas.webp</strong>
-      <span>Esperando imagen…</span>
-    </article>
-<article class="image-test">
-      <img src="curso-historia.webp?v=5.2.0" alt="curso-historia.webp">
-      <strong>curso-historia.webp</strong>
-      <span>Esperando imagen…</span>
-    </article>
-<article class="image-test">
-      <img src="curso-ia.webp?v=5.2.0" alt="curso-ia.webp">
-      <strong>curso-ia.webp</strong>
-      <span>Esperando imagen…</span>
-    </article>
-<article class="image-test">
-      <img src="curso-legado.webp?v=5.2.0" alt="curso-legado.webp">
-      <strong>curso-legado.webp</strong>
-      <span>Esperando imagen…</span>
-    </article>
-<article class="image-test">
-      <img src="curso-memoria.webp?v=5.2.0" alt="curso-memoria.webp">
-      <strong>curso-memoria.webp</strong>
-      <span>Esperando imagen…</span>
-    </article>
-<article class="image-test">
-      <img src="curso-mes.webp?v=5.2.0" alt="curso-mes.webp">
-      <strong>curso-mes.webp</strong>
-      <span>Esperando imagen…</span>
-    </article>
-<article class="image-test">
-      <img src="hero-lanzamiento.webp?v=5.2.0" alt="hero-lanzamiento.webp">
-      <strong>hero-lanzamiento.webp</strong>
-      <span>Esperando imagen…</span>
-    </article>
-<article class="image-test">
-      <img src="icon-192.png?v=5.2.0" alt="icon-192.png">
-      <strong>icon-192.png</strong>
-      <span>Esperando imagen…</span>
-    </article>
-<article class="image-test">
-      <img src="icon-512.png?v=5.2.0" alt="icon-512.png">
-      <strong>icon-512.png</strong>
-      <span>Esperando imagen…</span>
-    </article>
-<article class="image-test">
-      <img src="icono-oficial.png?v=5.2.0" alt="icono-oficial.png">
-      <strong>icono-oficial.png</strong>
-      <span>Esperando imagen…</span>
-    </article>
-<article class="image-test">
-      <img src="logo-completo-oficial.png?v=5.2.0" alt="logo-completo-oficial.png">
-      <strong>logo-completo-oficial.png</strong>
-      <span>Esperando imagen…</span>
-    </article>
-<article class="image-test">
-      <img src="logo-texto-oficial.png?v=5.2.0" alt="logo-texto-oficial.png">
-      <strong>logo-texto-oficial.png</strong>
-      <span>Esperando imagen…</span>
-    </article>
-<article class="image-test">
-      <img src="logo.webp?v=5.2.0" alt="logo.webp">
-      <strong>logo.webp</strong>
-      <span>Esperando imagen…</span>
-    </article>
-<article class="image-test">
-      <img src="recurso-cuentos.webp?v=5.2.0" alt="recurso-cuentos.webp">
-      <strong>recurso-cuentos.webp</strong>
-      <span>Esperando imagen…</span>
-    </article>
-<article class="image-test">
-      <img src="recurso-manual.webp?v=5.2.0" alt="recurso-manual.webp">
-      <strong>recurso-manual.webp</strong>
-      <span>Esperando imagen…</span>
-    </article>
-<article class="image-test">
-      <img src="ruben.webp?v=5.2.0" alt="ruben.webp">
-      <strong>ruben.webp</strong>
-      <span>Esperando imagen…</span>
-    </article></section>
+    <span class="eyebrow">Diagnóstico visual · V11.1</span>
+    <h1 class="page-title">Iconos y portadas de Compás Academy</h1>
+    <p class="page-subtitle">Estas son las rutas activas. Los recursos de marca viven en <strong>brand/academy</strong> y las portadas principales permanecen en la raíz del repositorio.</p>
+    <p><a class="btn btn-primary" href="./">Regresar a Compás Academy</a> <a class="btn btn-secondary" href="limpiar-cache.html">Limpiar caché</a></p>
+    <section class="verify-grid" id="verify-grid"></section>
   </main>
   <script>
+    const VERSION = '11.1.0';
+    const assets = [
+      ['brand/academy/logo.png', 'Logo oficial Academy'],
+      ['brand/academy/favicon.png', 'Favicon Academy'],
+      ['brand/academy/apple-touch.png', 'Apple Touch Icon'],
+      ['brand/academy/icon.svg', 'Icono PWA Academy'],
+      ['curso-compas.webp', 'El Compás del Estratega'],
+      ['curso-historia.webp', 'Elige tu historia más importante'],
+      ['curso-ia.webp', 'IA para creadores'],
+      ['curso-legado.webp', 'Legado que Trasciende'],
+      ['curso-memoria.webp', 'Despierta tu memoria'],
+      ['curso-mes.webp', 'Método MES®'],
+      ['hero-lanzamiento.webp', 'Imagen principal de lanzamiento'],
+      ['recurso-cuentos.webp', 'Recurso Cuentos'],
+      ['recurso-manual.webp', 'Recurso Manual'],
+      ['ruben.webp', 'Perfil Rubén']
+    ];
+
+    const grid = document.querySelector('#verify-grid');
+    grid.innerHTML = assets.map(([src, label]) => `
+      <article class="image-test">
+        <img src="${src}?v=${VERSION}" alt="${label}">
+        <strong>${label}</strong>
+        <span>${src}</span>
+        <span class="pending">Esperando imagen…</span>
+      </article>
+    `).join('');
+
     document.querySelectorAll('.image-test').forEach(card => {
       const img = card.querySelector('img');
-      const status = card.querySelector('span');
+      const status = card.querySelector('.pending');
       img.addEventListener('load', () => {
         status.textContent = 'Imagen cargada correctamente';
         status.className = 'ok';
       });
       img.addEventListener('error', () => {
-        status.textContent = 'Archivo no encontrado en GitHub';
+        status.textContent = 'Archivo no encontrado';
         status.className = 'bad';
       });
       if (img.complete) {

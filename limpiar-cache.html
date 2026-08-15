@@ -3,18 +3,21 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#f8f1e7">
-  <title>Limpiar Aula Compás</title>
-  <link rel="stylesheet" href="styles.css?v=5.2.0">
+  <meta name="theme-color" content="#17344B">
+  <title>Actualizar Compás Academy</title>
+  <link rel="icon" type="image/png" href="brand/academy/favicon.png?v=11.1.0">
+  <link rel="apple-touch-icon" href="brand/academy/apple-touch.png?v=11.1.0">
+  <link rel="stylesheet" href="styles.css?v=6.0.15">
+  <link rel="stylesheet" href="academy-brand-v11.css?v=11.1.0">
 </head>
 <body>
   <main class="login-screen">
     <section class="login-card glass loading-card">
-      <img class="official-lockup" src="logo-completo-oficial.png" alt="Proyecto Compás">
-      <h1>Actualizando Aula Compás</h1>
-      <p id="status">Eliminando archivos guardados de la versión anterior…</p>
+      <img class="official-lockup" src="brand/academy/logo.png?v=11.1.0" alt="Compás Academy" data-academy-brand-v11="official">
+      <h1>Actualizando Compás Academy</h1>
+      <p id="status">Eliminando iconos, imágenes y archivos guardados de la versión anterior…</p>
       <div class="spinner" id="spinner"></div>
-      <a class="btn btn-primary hide" id="return-link" href="./">Regresar al aula</a>
+      <a class="btn btn-primary hide" id="return-link" href="./">Regresar a Compás Academy</a>
     </section>
   </main>
   <script>
@@ -37,15 +40,15 @@
         localStorage.removeItem('aula_v2_logged_in');
         sessionStorage.clear();
 
-        status.textContent = 'La versión anterior fue eliminada correctamente.';
+        status.textContent = 'La versión anterior fue eliminada. Ya puedes cargar los iconos y portadas nuevas.';
       } catch (error) {
         console.error(error);
-        status.textContent = 'Se limpió lo posible. Ya puedes regresar al aula.';
+        status.textContent = 'Se limpió lo posible. Ya puedes regresar a Compás Academy.';
       }
 
       spinner.classList.add('hide');
       link.classList.remove('hide');
-      setTimeout(() => location.replace('./?actualizacion=5.2.0'), 1800);
+      setTimeout(() => location.replace('./?actualizacion=11.1.0'), 1800);
     })();
   </script>
 </body>

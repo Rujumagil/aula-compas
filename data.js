@@ -4,7 +4,7 @@ window.AULA_DATA = {
     fullName: "Rubén Junior Martínez Gil",
     email: "ruben@proyectocompas.com",
     role: "admin",
-    avatar: "assets/ruben.webp"
+    avatar: "ruben.webp?v=11.1.0"
   },
   courses: [
     {
@@ -12,7 +12,7 @@ window.AULA_DATA = {
       title: "El Compás del Estratega",
       subtitle: "Tus ideas no necesitan más presión. Necesitan dirección.",
       category: "Estrategia",
-      image: "assets/curso-compas.webp",
+      image: "curso-compas.webp?v=11.1.0",
       featured: true,
       progress: 65,
       modules: [
@@ -38,7 +38,7 @@ window.AULA_DATA = {
       title: "Despierta tu memoria",
       subtitle: "Recupera recuerdos valiosos y comienza a construir tu legado.",
       category: "Legado",
-      image: "assets/curso-memoria.webp",
+      image: "curso-memoria.webp?v=11.1.0",
       progress: 40,
       modules: [
         { title: "El valor de recordar", lessons: [
@@ -57,7 +57,7 @@ window.AULA_DATA = {
       title: "Legado que Trasciende",
       subtitle: "Convierte tus recuerdos en un relato o libro para quienes amas.",
       category: "Escritura",
-      image: "assets/curso-legado.webp",
+      image: "curso-legado.webp?v=11.1.0",
       progress: 25,
       modules: [
         { title: "Elegir la historia", lessons: [
@@ -75,7 +75,7 @@ window.AULA_DATA = {
       title: "Método MES®",
       subtitle: "Mindfulness, escritura y serenidad para crear un sistema personal.",
       category: "Bienestar",
-      image: "assets/curso-mes.webp",
+      image: "curso-mes.webp?v=11.1.0",
       progress: 72,
       modules: [
         { title: "Presencia", lessons: [
@@ -93,7 +93,7 @@ window.AULA_DATA = {
       title: "Elige tu historia más importante",
       subtitle: "Identifica la historia que más emoción y enseñanza contiene.",
       category: "Escritura",
-      image: "assets/curso-historia.webp",
+      image: "curso-historia.webp?v=11.1.0",
       progress: 50,
       modules: [
         { title: "Mis historias posibles", lessons: [
@@ -107,7 +107,7 @@ window.AULA_DATA = {
       title: "IA para creadores",
       subtitle: "Utiliza la inteligencia artificial como copiloto, sin perder tu voz.",
       category: "Tecnología",
-      image: "assets/curso-ia.webp",
+      image: "curso-ia.webp?v=11.1.0",
       progress: 35,
       modules: [
         { title: "Dirección humana", lessons: [
@@ -118,10 +118,10 @@ window.AULA_DATA = {
     }
   ],
   resources: [
-    { title:"Mapa Estratégico", type:"Guía PDF", image:"assets/recurso-manual.webp" },
-    { title:"Cuaderno de memoria", type:"Guía PDF", image:"assets/recurso-cuentos.webp" },
-    { title:"Plan de Acción", type:"Plantilla", image:"assets/curso-compas.webp" },
-    { title:"Enfoque y claridad", type:"Audio", image:"assets/curso-ia.webp" }
+    { title:"Mapa Estratégico", type:"Guía PDF", image:"recurso-manual.webp?v=11.1.0" },
+    { title:"Cuaderno de memoria", type:"Guía PDF", image:"recurso-cuentos.webp?v=11.1.0" },
+    { title:"Plan de Acción", type:"Plantilla", image:"curso-compas.webp?v=11.1.0" },
+    { title:"Enfoque y claridad", type:"Audio", image:"curso-ia.webp?v=11.1.0" }
   ],
   achievements: [
     { icon:"✦", title:"Estratega en marcha", text:"Completaste cinco lecciones." },

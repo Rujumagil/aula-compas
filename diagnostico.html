@@ -3,9 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#f8f1e7">
-  <title>Diagnóstico de Aula Compás</title>
-  <link rel="stylesheet" href="styles.css?v=5.2.0">
+  <meta name="theme-color" content="#17344B">
+  <title>Diagnóstico de Compás Academy</title>
+  <link rel="icon" type="image/png" href="brand/academy/favicon.png?v=11.1.0">
+  <link rel="apple-touch-icon" href="brand/academy/apple-touch.png?v=11.1.0">
+  <link rel="stylesheet" href="styles.css?v=6.0.15">
+  <link rel="stylesheet" href="academy-brand-v11.css?v=11.1.0">
   <style>
     .diagnostic-list{display:grid;gap:10px;margin:18px 0;text-align:left}
     .diagnostic-item{padding:13px;border-radius:13px;background:rgba(255,255,255,.65);border:1px solid rgba(10,36,69,.09)}
@@ -17,7 +20,7 @@
 <body>
   <main class="login-screen">
     <section class="login-card glass" style="width:min(620px,100%)">
-      <img class="official-lockup" src="logo-completo-oficial.png" alt="Proyecto Compás">
+      <img class="official-lockup" src="brand/academy/logo.png?v=11.1.0" alt="Compás Academy" data-academy-brand-v11="official">
       <h1>Diagnóstico</h1>
       <p>Esta pantalla revisa los archivos básicos y la conexión pública.</p>
 
@@ -29,13 +32,14 @@
       </div>
 
       <div class="bootstrap-actions">
-        <a class="btn btn-primary" href="./?diagnostico=ok">Regresar al aula</a>
+        <a class="btn btn-primary" href="./?diagnostico=ok">Regresar a Compás Academy</a>
         <a class="btn btn-secondary" href="limpiar-cache.html">Limpiar caché</a>
       </div>
     </section>
   </main>
 
-  <script src="supabase-config.js?v=5.2.0"></script>
+  <script src="supabase-config.js?v=7.0.0"></script>
+  <script src="academy-brand-v11.js?v=11.1.0"></script>
   <script>
     const setResult = (id, ok, message) => {
       document.querySelector(`#${id} span`).className = ok ? 'ok' : 'bad';
