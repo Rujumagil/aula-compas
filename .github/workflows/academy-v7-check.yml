@@ -60,6 +60,7 @@ jobs:
           test -f 17-academy-assessments-option-security.sql
           test -f 18-academy-assessment-engine.sql
           test -f 19-academy-starter-assessment.sql
+          test -f 20-academy-assessment-rpc-hardening.sql
           grep -q "academy-brand-v11.js?v=11.1.0" bootstrap.js
           grep -q "academy-v7.js" bootstrap.js
           grep -q "academy-dashboard-v9.js" bootstrap.js
@@ -86,4 +87,6 @@ jobs:
           grep -q "start_assessment_attempt" 18-academy-assessment-engine.sql
           grep -q "submit_assessment_attempt" 18-academy-assessment-engine.sql
           grep -q "Checkpoint · Primeros pasos con Compás One" 19-academy-starter-assessment.sql
+          grep -q "private.start_assessment_attempt_impl" 20-academy-assessment-rpc-hardening.sql
+          grep -q "security invoker" 20-academy-assessment-rpc-hardening.sql
           grep -q "aula.proyectocompas.com" CNAME
