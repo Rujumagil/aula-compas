@@ -24,7 +24,8 @@ as $$
   );
 $$;
 
-create or replace function private.is_workspace_member(requested_workspace_id uuid)
+-- Conserva el nombre histórico target_workspace para evitar drift de firma.
+create or replace function private.is_workspace_member(target_workspace uuid)
 returns boolean
 language sql
 stable
@@ -34,7 +35,7 @@ as $$
   select exists (
     select 1
     from public.workspace_members
-    where workspace_id = requested_workspace_id
+    where workspace_id = target_workspace
       and user_id = (select auth.uid())
       and status = 'active'
   );
