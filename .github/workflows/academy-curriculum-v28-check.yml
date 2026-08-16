@@ -1,0 +1,28 @@
+name: Academy curriculum V28 checks
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  curriculum:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate curriculum blueprint
+        run: |
+          node -e "const data=JSON.parse(require('fs').readFileSync('academy-curriculum-v28.json','utf8')); if(data.production_ready!==false||data.requires_e2e_before_apply!==true||data.courses.length!==6) process.exit(1); console.log('curriculum blueprint ok')"
+          test -s ACADEMY-CURRICULUM-V28.md
+          grep -q "no modifica Supabase" ACADEMY-CURRICULUM-V28.md
+          grep -q '"production_ready": false' academy-curriculum-v28.json
+          grep -q '"primeros-pasos-compas-one"' academy-curriculum-v28.json
+          grep -q '"automatizacion-equipos-pequenos"' academy-curriculum-v28.json
