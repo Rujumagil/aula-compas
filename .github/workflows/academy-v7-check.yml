@@ -78,12 +78,17 @@ jobs:
           test -f 29-academy-community-performance.sql
           test -f 30-academy-accessibility.sql
           test -f 31-academy-p0-security-v23.sql
+          test -f 32-academy-p0-fk-indexes-v24.sql
           grep -q "private.admin_change_student_access_status_impl" 31-academy-p0-security-v23.sql
           grep -q "private.admin_grant_product_access_impl" 31-academy-p0-security-v23.sql
           grep -q "private.admin_set_user_role_impl" 31-academy-p0-security-v23.sql
           grep -q "private.delete_managed_course_impl" 31-academy-p0-security-v23.sql
           grep -q "security invoker" 31-academy-p0-security-v23.sql
           grep -q "revoke all on function public.is_aula_admin() from public, anon" 31-academy-p0-security-v23.sql
+          grep -q "academy_contact_links_contact_id_idx" 32-academy-p0-fk-indexes-v24.sql
+          grep -q "assessment_answers_question_id_idx" 32-academy-p0-fk-indexes-v24.sql
+          grep -q "workspaces_created_by_idx" 32-academy-p0-fk-indexes-v24.sql
+          ! grep -qi "drop table\|delete from\|truncate" 32-academy-p0-fk-indexes-v24.sql
           grep -q "academy-community-v21.js?v=21.0.0" bootstrap.js
           grep -q "academy-accessibility-v22.js?v=22.0.0" bootstrap.js
           grep -q "academy-accessibility-v22.css?v=22.0.0" index.html
