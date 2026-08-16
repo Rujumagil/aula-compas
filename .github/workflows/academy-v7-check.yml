@@ -80,6 +80,7 @@ jobs:
           test -f 31-academy-p0-security-v23.sql
           test -f 32-academy-p0-fk-indexes-v24.sql
           test -f 33-academy-p0-rls-initplan-v25.sql
+          test -f 34-academy-p0-rls-consolidation-v26.sql
           grep -q "private.admin_change_student_access_status_impl" 31-academy-p0-security-v23.sql
           grep -q "private.admin_grant_product_access_impl" 31-academy-p0-security-v23.sql
           grep -q "private.admin_set_user_role_impl" 31-academy-p0-security-v23.sql
@@ -94,6 +95,13 @@ jobs:
           grep -q "wm.workspace_id = workspaces.id" 33-academy-p0-rls-initplan-v25.sql
           grep -q "resources_authorized_read" 33-academy-p0-rls-initplan-v25.sql
           ! grep -qi "delete from\|truncate" 33-academy-p0-rls-initplan-v25.sql
+          grep -q "courses_select_consolidated" 34-academy-p0-rls-consolidation-v26.sql
+          grep -q "lessons_select_consolidated" 34-academy-p0-rls-consolidation-v26.sql
+          grep -q "modules_select_consolidated" 34-academy-p0-rls-consolidation-v26.sql
+          grep -q "resource_access_select" 34-academy-p0-rls-consolidation-v26.sql
+          grep -q "student_access_select" 34-academy-p0-rls-consolidation-v26.sql
+          grep -q "policyname like 'Administradores gestionan m%'" 34-academy-p0-rls-consolidation-v26.sql
+          ! grep -qi "drop table\|delete from\|truncate" 34-academy-p0-rls-consolidation-v26.sql
           grep -q "academy-community-v21.js?v=21.0.0" bootstrap.js
           grep -q "academy-accessibility-v22.js?v=22.0.0" bootstrap.js
           grep -q "academy-accessibility-v22.css?v=22.0.0" index.html
