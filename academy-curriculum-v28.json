@@ -1,0 +1,76 @@
+{
+  "version": "28.0.0",
+  "status": "blueprint",
+  "production_ready": false,
+  "requires_e2e_before_apply": true,
+  "notes": "Blueprint editorial. No insertar módulos o lecciones incompletos en producción hasta contar con soporte de borrador o contenido final.",
+  "courses": [
+    {
+      "slug": "primeros-pasos-compas-one",
+      "title": "Primeros pasos con Compás One",
+      "target_duration_minutes": 90,
+      "modules": [
+        {"title":"Conoce Compás One","lessons":[{"title":"Qué es Compás One y cómo se organiza","minutes":12,"existing":true},{"title":"Navegación, workspace y permisos","minutes":14,"existing":true},{"title":"Roles, contexto y responsabilidad de datos","minutes":10,"existing":false}]},
+        {"title":"Tu primer flujo de trabajo","lessons":[{"title":"Registrar y seguir un prospecto","minutes":18,"existing":true},{"title":"Estado, prioridad y próxima acción","minutes":10,"existing":false}]},
+        {"title":"Conversaciones con contexto","lessons":[{"title":"Leer el historial antes de responder","minutes":9,"existing":false},{"title":"Tutor IA, automatización y escalamiento humano","minutes":8,"existing":false}]},
+        {"title":"Rutina de operación","lessons":[{"title":"Revisión diaria de pendientes","minutes":5,"existing":false},{"title":"Checklist de cierre y calidad de datos","minutes":4,"existing":false}]}
+      ]
+    },
+    {
+      "slug": "crm-seguimiento-comercial",
+      "title": "CRM y seguimiento comercial",
+      "target_duration_minutes": 120,
+      "modules": [
+        {"title":"Fundamentos de CRM","lessons":[{"title":"Qué debe resolver un CRM","minutes":15,"existing":true},{"title":"Contacto, prospecto, oportunidad y cliente","minutes":12,"existing":false}]},
+        {"title":"Seguimiento comercial","lessons":[{"title":"Cadencia de seguimiento","minutes":18,"existing":true},{"title":"Próxima acción, fecha y contexto","minutes":15,"existing":false}]},
+        {"title":"Pipeline y prioridades","lessons":[{"title":"Diseñar etapas que reflejen tu proceso real","minutes":16,"existing":false},{"title":"Priorizar oportunidades sin perder prospectos","minutes":14,"existing":false}]},
+        {"title":"Medición y disciplina","lessons":[{"title":"Indicadores básicos del proceso comercial","minutes":15,"existing":false},{"title":"Rutina semanal de limpieza y revisión","minutes":15,"existing":false}]}
+      ]
+    },
+    {
+      "slug": "marketing-digital-con-direccion",
+      "title": "Marketing digital con dirección",
+      "target_duration_minutes": 120,
+      "modules": [
+        {"title":"Estrategia antes que contenido","lessons":[{"title":"Objetivo, audiencia y propuesta","minutes":18,"existing":true},{"title":"Definir el resultado que debe producir el marketing","minutes":12,"existing":false}]},
+        {"title":"Mensaje y propuesta de valor","lessons":[{"title":"Problema, promesa y diferenciador","minutes":15,"existing":false},{"title":"Mensajes para cada etapa del cliente","minutes":15,"existing":false}]},
+        {"title":"Contenido con función","lessons":[{"title":"Atracción, confianza, decisión y seguimiento","minutes":15,"existing":false},{"title":"Diseñar un calendario conectado al negocio","minutes":15,"existing":false}]},
+        {"title":"Campañas y métricas","lessons":[{"title":"Conectar captación con Compás One","minutes":15,"existing":false},{"title":"Métricas que ayudan a decidir","minutes":15,"existing":false}]}
+      ]
+    },
+    {
+      "slug": "meta-ads-campana-oportunidad",
+      "title": "Meta Ads: de campaña a oportunidad",
+      "target_duration_minutes": 150,
+      "modules": [
+        {"title":"Campañas que alimentan el CRM","lessons":[{"title":"Del anuncio al seguimiento","minutes":20,"existing":true},{"title":"Elegir objetivo de campaña según la acción esperada","minutes":15,"existing":false}]},
+        {"title":"Audiencia y creatividad","lessons":[{"title":"Construir una audiencia útil","minutes":15,"existing":false},{"title":"Mensaje, oferta y creatividad coherentes","minutes":18,"existing":false}]},
+        {"title":"Captación de prospectos","lessons":[{"title":"Formulario, landing o conversación","minutes":15,"existing":false},{"title":"Datos mínimos para un lead accionable","minutes":12,"existing":false}]},
+        {"title":"Seguimiento en Compás One","lessons":[{"title":"Recepción, clasificación y asignación","minutes":15,"existing":false},{"title":"Cadencia posterior a la captación","minutes":15,"existing":false}]},
+        {"title":"Medición y mejora","lessons":[{"title":"Costo por lead vs calidad del prospecto","minutes":13,"existing":false},{"title":"De campaña a oportunidad: lectura del embudo","minutes":12,"existing":false}]}
+      ]
+    },
+    {
+      "slug": "ia-aplicada-negocios",
+      "title": "IA aplicada a negocios",
+      "target_duration_minutes": 120,
+      "modules": [
+        {"title":"IA con contexto","lessons":[{"title":"Prompts con contexto de negocio","minutes":18,"existing":true},{"title":"Objetivo, contexto, límites y formato de salida","minutes":14,"existing":false}]},
+        {"title":"Asistentes y agentes","lessons":[{"title":"Diferencias entre asistente, automatización y agente","minutes":14,"existing":false},{"title":"Cuándo delegar y cuándo escalar a una persona","minutes":14,"existing":false}]},
+        {"title":"Aplicaciones en negocio","lessons":[{"title":"Atención y ventas asistidas por IA","minutes":15,"existing":false},{"title":"Contenido, análisis y productividad","minutes":15,"existing":false}]},
+        {"title":"Control y criterio humano","lessons":[{"title":"Validación de respuestas y prevención de errores","minutes":15,"existing":false},{"title":"Privacidad, datos sensibles y uso responsable","minutes":15,"existing":false}]}
+      ]
+    },
+    {
+      "slug": "automatizacion-equipos-pequenos",
+      "title": "Automatización para equipos pequeños",
+      "target_duration_minutes": 120,
+      "modules": [
+        {"title":"Detectar qué automatizar","lessons":[{"title":"Mapa de tareas repetitivas","minutes":18,"existing":true},{"title":"Frecuencia, riesgo y valor del proceso","minutes":14,"existing":false}]},
+        {"title":"Diseñar el flujo","lessons":[{"title":"Disparadores, condiciones y acciones","minutes":15,"existing":false},{"title":"Datos de entrada y resultado esperado","minutes":15,"existing":false}]},
+        {"title":"Excepciones y escalamiento","lessons":[{"title":"Qué pasa cuando el flujo no puede continuar","minutes":14,"existing":false},{"title":"Puntos de control humano","minutes":14,"existing":false}]},
+        {"title":"Medición y mantenimiento","lessons":[{"title":"Indicadores de una automatización útil","minutes":15,"existing":false},{"title":"Errores, revisión y mejora continua","minutes":15,"existing":false}]}
+      ]
+    }
+  ]
+}
