@@ -86,6 +86,7 @@
         throw new Error('Falta la configuración pública de Supabase.');
       }
       await loadSupabaseLibrary();
+      await loadScript('supabase-compat-v1.js?v=1.0.0');
 
       await loadScript('academy-brand-v29.js?v=29.2.0');
       await loadScript('app.js?v=6.0.15');
