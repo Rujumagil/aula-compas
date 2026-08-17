@@ -1,4 +1,4 @@
-const CACHE = 'compas-academy-v29.2.0-brand-hardfix';
+const CACHE = 'compas-academy-v29.3.0-sidebar-user-card';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -22,9 +22,11 @@ const STATIC_ASSETS = [
   './academy-brand-v29.css?v=29.2.0',
   './academy-brand-visibility-v29-1.css?v=29.1.0',
   './academy-brand-hardfix-v29-2.css?v=29.2.0',
+  './academy-sidebar-user-v29-3.css?v=29.3.0',
   './app.js?v=6.0.15',
   './academy-brand-v29.js?v=29.2.0',
   './academy-brand-visibility-v29-1.js?v=29.1.0',
+  './academy-sidebar-user-v29-3.js?v=29.3.0',
   './academy-v7.js?v=7.0.0',
   './academy-premium.js?v=8.0.0',
   './academy-dashboard-v9.js?v=9.0.0',
@@ -41,7 +43,7 @@ const STATIC_ASSETS = [
   './academy-course-landings-v27.js?v=27.0.0',
   './verificar-certificado.html',
   './verificar-certificado-v16.js?v=16.0.0',
-  './bootstrap.js?v=29.2.0',
+  './bootstrap.js?v=29.3.0',
   './supabase-config.js?v=7.0.0',
   './manifest.json?v=29.0.0',
   './brand/academy/icon.svg?v=29.2.0',
