@@ -1,0 +1,75 @@
+/* Compás Academy · Sidebar brand visibility hotfix v29.1
+   Mantiene la geometría oficial del logo; solo corrige aplicación, contraste y legibilidad. */
+
+.sidebar .brand {
+  min-height: 72px !important;
+  gap: 14px !important;
+  align-items: center !important;
+}
+
+.sidebar .brand > img,
+.sidebar .brand img[data-academy-brand-v29="official"] {
+  width: 64px !important;
+  height: 64px !important;
+  min-width: 64px !important;
+  object-fit: contain !important;
+  object-position: center !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  filter: none !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  mix-blend-mode: normal !important;
+}
+
+.sidebar .brand > span {
+  display: grid !important;
+  gap: 5px !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  line-height: 1 !important;
+}
+
+.sidebar .brand strong {
+  display: block !important;
+  margin: 0 !important;
+  color: #F7F9FC !important;
+  font-family: "IBM Plex Sans", "Inter", ui-sans-serif, system-ui, sans-serif !important;
+  font-size: 1.08rem !important;
+  font-weight: 700 !important;
+  letter-spacing: .055em !important;
+  line-height: 1.05 !important;
+  text-transform: uppercase !important;
+  text-shadow: none !important;
+  opacity: 1 !important;
+}
+
+.sidebar .brand > span > span {
+  display: block !important;
+  margin: 0 !important;
+  color: #E6C400 !important;
+  font-family: "IBM Plex Sans", "Inter", ui-sans-serif, system-ui, sans-serif !important;
+  font-size: .66rem !important;
+  font-weight: 500 !important;
+  letter-spacing: .26em !important;
+  line-height: 1.2 !important;
+  text-transform: uppercase !important;
+  text-shadow: none !important;
+  opacity: 1 !important;
+}
+
+@media (max-width: 900px) and (min-width: 761px) {
+  .sidebar .brand > img,
+  .sidebar .brand img[data-academy-brand-v29="official"] {
+    width: 58px !important;
+    height: 58px !important;
+    min-width: 58px !important;
+  }
+
+  .sidebar .brand strong { font-size: .98rem !important; }
+  .sidebar .brand > span > span { font-size: .60rem !important; }
+}
