@@ -2,6 +2,7 @@
   const app = document.querySelector('#app');
   const BRAND_HARDFIX_HREF = 'academy-brand-hardfix-v29-2.css?v=29.2.0';
   const USER_CARD_HREF = 'academy-sidebar-user-v29-3.css?v=29.3.0';
+  const EXPERIENCE_HREF = 'academy-experience-v30.css?v=30.0.0';
 
   function ensureStylesheet(id, href) {
     let link = document.getElementById(id);
@@ -12,11 +13,15 @@
       document.head.appendChild(link);
     }
     if (link.getAttribute('href') !== href) link.setAttribute('href', href);
+    return link;
   }
 
-  function ensureBrandHardfix() {
+  function ensureVisualLayers() {
     ensureStylesheet('academy-brand-hardfix-v29-2', BRAND_HARDFIX_HREF);
     ensureStylesheet('academy-sidebar-user-v29-3', USER_CARD_HREF);
+    const experience = ensureStylesheet('academy-experience-v30', EXPERIENCE_HREF);
+    // V30 debe permanecer como última capa para evitar que estilos heredados vuelvan a dominar la interfaz.
+    if (experience !== document.head.lastElementChild) document.head.appendChild(experience);
   }
 
   function renderStatus(title, message, showActions = false) {
@@ -79,7 +84,7 @@
   }
 
   async function start() {
-    ensureBrandHardfix();
+    ensureVisualLayers();
     renderStatus('Compás Academy', 'Preparando tu acceso…');
     try {
       if (!window.SUPABASE_CONFIG?.url || !window.SUPABASE_CONFIG?.publishableKey) {
@@ -104,8 +109,9 @@
       await loadScript('academy-community-v21.js?v=21.0.0');
       await loadScript('academy-accessibility-v22.js?v=22.0.0');
       await loadScript('academy-course-landings-v27.js?v=27.0.0');
+      await loadScript('academy-experience-v30.js?v=30.0.0');
 
-      ensureBrandHardfix();
+      ensureVisualLayers();
 
       setTimeout(() => {
         if (document.querySelector('.loading-card')) {
