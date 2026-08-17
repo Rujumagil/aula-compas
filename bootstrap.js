@@ -1,11 +1,11 @@
 (() => {
   const app = document.querySelector('#app');
-  const BRAND_HARDFIX_VERSION = '29.2.0';
+  const BRAND_HARDFIX_HREF = 'academy-brand-hardfix-v29-2.css?v=29.2.0';
 
   function ensureBrandHardfix() {
     const id = 'academy-brand-hardfix-v29-2';
     let link = document.getElementById(id);
-    const href = `academy-brand-hardfix-v29-2.css?v=${BRAND_HARDFIX_VERSION}`;
+    const href = BRAND_HARDFIX_HREF;
     if (!link) {
       link = document.createElement('link');
       link.id = id;
