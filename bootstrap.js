@@ -3,6 +3,7 @@
   const BRAND_HARDFIX_HREF = 'academy-brand-hardfix-v29-2.css?v=29.2.0';
   const USER_CARD_HREF = 'academy-sidebar-user-v29-3.css?v=29.3.0';
   const EXPERIENCE_HREF = 'academy-experience-v30.css?v=30.0.0';
+  const LEARNING_HREF = 'academy-learning-v31.css?v=31.0.0';
 
   function ensureStylesheet(id, href) {
     let link = document.getElementById(id);
@@ -19,9 +20,10 @@
   function ensureVisualLayers() {
     ensureStylesheet('academy-brand-hardfix-v29-2', BRAND_HARDFIX_HREF);
     ensureStylesheet('academy-sidebar-user-v29-3', USER_CARD_HREF);
-    const experience = ensureStylesheet('academy-experience-v30', EXPERIENCE_HREF);
-    // V30 debe permanecer como última capa para evitar que estilos heredados vuelvan a dominar la interfaz.
-    if (experience !== document.head.lastElementChild) document.head.appendChild(experience);
+    ensureStylesheet('academy-experience-v30', EXPERIENCE_HREF);
+    const learning = ensureStylesheet('academy-learning-v31', LEARNING_HREF);
+    // V31 es la última capa: conserva la base V30 y domina únicamente catálogo, curso y lección.
+    if (learning !== document.head.lastElementChild) document.head.appendChild(learning);
   }
 
   function renderStatus(title, message, showActions = false) {
@@ -110,6 +112,7 @@
       await loadScript('academy-accessibility-v22.js?v=22.0.0');
       await loadScript('academy-course-landings-v27.js?v=27.0.0');
       await loadScript('academy-experience-v30.js?v=30.0.0');
+      await loadScript('academy-learning-v31.js?v=31.0.0');
 
       ensureVisualLayers();
 

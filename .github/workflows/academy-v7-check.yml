@@ -33,6 +33,7 @@ jobs:
           node --check academy-brand-visibility-v29-1.js
           node --check academy-sidebar-user-v29-3.js
           node --check academy-experience-v30.js
+          node --check academy-learning-v31.js
           node --check academy-assessments-v14.js
           node --check academy-assessment-admin-v15.js
           node --check academy-certificates-v16.js
@@ -67,6 +68,8 @@ jobs:
           test -f academy-sidebar-user-v29-6.css
           test -f academy-experience-v30.css
           test -f academy-experience-v30.js
+          test -f academy-learning-v31.css
+          test -f academy-learning-v31.js
           test -f academy-assessments-v14.css
           test -f academy-assessment-admin-v15.css
           test -f academy-certificates-v16.css
@@ -131,6 +134,8 @@ jobs:
           grep -q "academy-sidebar-user-v29-3.js?v=29.3.0" bootstrap.js
           grep -q "academy-experience-v30.css?v=30.0.0" bootstrap.js
           grep -q "academy-experience-v30.js?v=30.0.0" bootstrap.js
+          grep -q "academy-learning-v31.css?v=31.0.0" bootstrap.js
+          grep -q "academy-learning-v31.js?v=31.0.0" bootstrap.js
           grep -q "academy-accessibility-v22.css?v=22.0.0" index.html
           grep -q "academy-course-landings-v27.css?v=27.0.0" index.html
           grep -q "academy-brand-v29.css?v=29.2.0" index.html
@@ -138,22 +143,29 @@ jobs:
           grep -q "academy-sidebar-user-v29-3.css?v=29.3.0" index.html
           grep -q "academy-sidebar-user-v29-6.css?v=29.6.0" index.html
           grep -q "academy-experience-v30.css?v=30.0.0" index.html
-          grep -q "bootstrap.js?v=30.0.0" index.html
+          grep -q "academy-learning-v31.css?v=31.0.0" index.html
+          grep -q "bootstrap.js?v=31.0.0" index.html
           grep -q "brand/academy/icon.svg?v=29.2.0" index.html
           grep -q "primeros-pasos-compas-one" academy-course-landings-v27.js
           grep -q "Temario previsto" academy-course-landings-v27.js
           grep -q "course-landing-app" curso.html
+          grep -q "academy-learning-v31.css?v=31.0.0" curso.html
+          grep -q "academy-learning-v31.js?v=31.0.0" curso.html
           grep -q "Saltar al contenido principal" index.html
           grep -q "prefers-reduced-motion" academy-accessibility-v22.css
           grep -q "prefers-reduced-motion" academy-experience-v30.css
+          grep -q "prefers-reduced-motion" academy-learning-v31.css
           grep -q "aria-current" academy-accessibility-v22.js
           grep -q "aria-keyshortcuts" academy-experience-v30.js
+          grep -q "lesson-study-nav-v31" academy-learning-v31.js
+          grep -q "lesson-footer-nav-v31" academy-learning-v31.js
+          grep -q "learning-v31-context" academy-learning-v31.js
           grep -q "Transcripción de la lección" academy-accessibility-v22.js
           grep -q "transcript_text" 30-academy-accessibility.sql
           grep -q "captions_url" 30-academy-accessibility.sql
           grep -q "accessibility_notes" 30-academy-accessibility.sql
           ! grep -qi "drop table\|delete from\|truncate" 30-academy-accessibility.sql
-          grep -q "compas-academy-v30.0.0-premium-experience" sw.js
+          grep -q "compas-academy-v31.0.0-premium-learning" sw.js
           grep -q "academy-accessibility-v22.js?v=22.0.0" sw.js
           grep -q "academy-accessibility-v22.css?v=22.0.0" sw.js
           grep -q "academy-course-landings-v27.js?v=27.0.0" sw.js
@@ -166,8 +178,10 @@ jobs:
           grep -q "academy-sidebar-user-v29-6.css?v=29.6.0" sw.js
           grep -q "academy-experience-v30.css?v=30.0.0" sw.js
           grep -q "academy-experience-v30.js?v=30.0.0" sw.js
+          grep -q "academy-learning-v31.css?v=31.0.0" sw.js
+          grep -q "academy-learning-v31.js?v=31.0.0" sw.js
           grep -q "brand/academy/icon-ice.svg?v=29.2.0" sw.js
-          grep -q "bootstrap.js?v=30.0.0" sw.js
+          grep -q "bootstrap.js?v=31.0.0" sw.js
           grep -q "./curso.html" sw.js
           grep -q "upgrade-insecure-requests" index.html
           grep -q "aula.proyectocompas.com" CNAME
