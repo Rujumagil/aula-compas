@@ -1,6 +1,6 @@
-/* Compás Academy · Sidebar user card v29.4
-   Ajuste visual directo del componente real .sidebar-bottom > .user-mini.
-   Prioriza legibilidad del nombre, integración con el sidebar y proporciones compactas. */
+/* Compás Academy · Sidebar user card v29.5
+   Corrige la colisión con academy-premium.css.
+   La tarjeta debe permanecer azul en reposo, hover, foco y selección. */
 
 .sidebar .sidebar-bottom{
   left:14px!important;
@@ -127,6 +127,30 @@
 .sidebar .user-mini[data-role='Instructor'] > span:not(.user-mini-avatar-fallback) > span{
   color:#F2D31B!important;
   font-weight:600!important;
+}
+
+/* La capa premium tiene body.premium-ui-v8 .user-mini con !important.
+   Estas reglas tienen mayor especificidad y mantienen el azul permanente. */
+body.premium-ui-v8 .sidebar .user-mini,
+body.premium-ui-v8 .sidebar .user-mini:link,
+body.premium-ui-v8 .sidebar .user-mini:visited{
+  background:linear-gradient(145deg,#12355B,#2C537E)!important;
+  border:1px solid rgba(247,249,252,.18)!important;
+  box-shadow:0 12px 28px rgba(5,22,43,.24)!important;
+  color:#F7F9FC!important;
+}
+
+body.premium-ui-v8 .sidebar .user-mini:hover,
+body.premium-ui-v8 .sidebar .user-mini:focus-visible,
+body.premium-ui-v8 .sidebar .user-mini:active{
+  background:linear-gradient(145deg,#163E67,#365E8B)!important;
+  border-color:rgba(230,196,0,.48)!important;
+  color:#F7F9FC!important;
+}
+
+body.premium-ui-v8 .sidebar .user-mini > img{
+  background:#12355B!important;
+  border-color:rgba(247,249,252,.24)!important;
 }
 
 @media(max-height:720px) and (min-width:761px){
