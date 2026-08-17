@@ -1,9 +1,11 @@
 (() => {
   const VERSION = '29.0.0';
-  const BRAND_ICON = `brand/academy/icon.svg?v=${VERSION}`;
+  const BRAND_NAVY = `brand/academy/icon.svg?v=${VERSION}`;
+  const BRAND_ICE = `brand/academy/icon-ice.svg?v=${VERSION}`;
   const MANIFEST = `manifest.json?v=${VERSION}`;
 
-  const BRAND_IMAGE = /(?:^|\/)(?:brand\/academy\/(?:logo|logo-ice|favicon|apple-touch|icon-192|icon-512)\.png|brand\/academy\/icon\.svg|compas-academia\.svg|logo-completo-oficial\.png|logo-texto-oficial\.png|logo\.webp|icono-oficial\.png|icon-192\.png|icon-512\.png)(?:\?.*)?$/i;
+  const BRAND_IMAGE = /(?:^|\/)(?:brand\/academy\/(?:logo|logo-ice|favicon|apple-touch|icon-192|icon-512)\.png|brand\/academy\/(?:icon|icon-ice)\.svg|compas-academia\.svg|logo-completo-oficial\.png|logo-texto-oficial\.png|logo\.webp|icono-oficial\.png|icon-192\.png|icon-512\.png)(?:\?.*)?$/i;
+  const DARK_PLACEMENT = '.sidebar,.academy-public-footer,.public-footer,.auth-story,.course-final-cta,.academy-route-card';
   const MEDIA = /(?:^|\/)(?:curso-(?:compas|historia|ia|legado|memoria|mes)|hero-lanzamiento|recurso-(?:cuentos|manual)|ruben)\.webp(?:\?.*)?$/i;
   const TEXT_REPLACEMENTS = [
     [/Proyecto Compás Evolution/g, 'Compás Evolution'],
@@ -23,13 +25,20 @@
     return output;
   }
 
+  function isDark(img) {
+    return Boolean(img.closest(DARK_PLACEMENT));
+  }
+
   function updateImage(img) {
     if (!(img instanceof HTMLImageElement)) return;
     const src = img.getAttribute('src') || '';
 
     if (BRAND_IMAGE.test(src)) {
-      if (src !== BRAND_ICON) img.setAttribute('src', BRAND_ICON);
+      const dark = isDark(img);
+      const next = dark ? BRAND_ICE : BRAND_NAVY;
+      if (src !== next) img.setAttribute('src', next);
       img.dataset.academyBrandV29 = 'official';
+      img.dataset.academyOnDark = dark ? 'true' : 'false';
       img.alt = 'Compás Academy';
       return;
     }
@@ -89,8 +98,8 @@
     const ogTitle = document.querySelector('meta[property="og:title"]');
 
     if (theme) theme.setAttribute('content', '#12355B');
-    if (favicon) favicon.setAttribute('href', BRAND_ICON);
-    if (appleTouch) appleTouch.setAttribute('href', BRAND_ICON);
+    if (favicon) favicon.setAttribute('href', BRAND_NAVY);
+    if (appleTouch) appleTouch.setAttribute('href', BRAND_NAVY);
     if (manifest) manifest.setAttribute('href', MANIFEST);
     if (ogImage) ogImage.setAttribute('content', `https://aula.proyectocompas.com/brand/academy/icon.svg?v=${VERSION}`);
     if (ogTitle) ogTitle.setAttribute('content', normalizeText(ogTitle.getAttribute('content') || 'Compás Academy'));
@@ -125,9 +134,10 @@
     observer.observe(document.documentElement, { childList: true, subtree: true, characterData: true });
     window.addEventListener('hashchange', () => setTimeout(() => refresh(), 0));
     window.ACADEMY_BRAND_V29 = Object.freeze({
-      icon: BRAND_ICON,
-      favicon: BRAND_ICON,
-      appleTouch: BRAND_ICON,
+      navy: BRAND_NAVY,
+      ice: BRAND_ICE,
+      favicon: BRAND_NAVY,
+      appleTouch: BRAND_NAVY,
       manifest: MANIFEST,
       version: VERSION
     });
