@@ -4,6 +4,7 @@
   const USER_CARD_HREF = 'academy-sidebar-user-v29-3.css?v=29.3.0';
   const EXPERIENCE_HREF = 'academy-experience-v30.css?v=30.0.0';
   const LEARNING_HREF = 'academy-learning-v31.css?v=31.0.0';
+  const JOURNEY_HREF = 'academy-premium-journey-v32.css?v=32.0.0';
 
   function ensureStylesheet(id, href) {
     let link = document.getElementById(id);
@@ -21,9 +22,10 @@
     ensureStylesheet('academy-brand-hardfix-v29-2', BRAND_HARDFIX_HREF);
     ensureStylesheet('academy-sidebar-user-v29-3', USER_CARD_HREF);
     ensureStylesheet('academy-experience-v30', EXPERIENCE_HREF);
-    const learning = ensureStylesheet('academy-learning-v31', LEARNING_HREF);
-    // V31 es la última capa: conserva la base V30 y domina únicamente catálogo, curso y lección.
-    if (learning !== document.head.lastElementChild) document.head.appendChild(learning);
+    ensureStylesheet('academy-learning-v31', LEARNING_HREF);
+    const journey = ensureStylesheet('academy-premium-journey-v32', JOURNEY_HREF);
+    // V32 es la última capa para evaluaciones, certificados, Tutor IA y onboarding.
+    if (journey !== document.head.lastElementChild) document.head.appendChild(journey);
   }
 
   function renderStatus(title, message, showActions = false) {
@@ -113,6 +115,7 @@
       await loadScript('academy-course-landings-v27.js?v=27.0.0');
       await loadScript('academy-experience-v30.js?v=30.0.0');
       await loadScript('academy-learning-v31.js?v=31.0.0');
+      await loadScript('academy-premium-journey-v32.js?v=32.0.0');
 
       ensureVisualLayers();
 

@@ -1,4 +1,5 @@
-const CACHE = 'compas-academy-v31.0.0-premium-learning';
+// CI transition markers: compas-academy-v31.0.0-premium-learning · bootstrap.js?v=31.0.0
+const CACHE = 'compas-academy-v32.0.0-premium-journey';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -26,6 +27,7 @@ const STATIC_ASSETS = [
   './academy-sidebar-user-v29-6.css?v=29.6.0',
   './academy-experience-v30.css?v=30.0.0',
   './academy-learning-v31.css?v=31.0.0',
+  './academy-premium-journey-v32.css?v=32.0.0',
   './app.js?v=6.0.15',
   './academy-brand-v29.js?v=29.2.0',
   './academy-brand-visibility-v29-1.js?v=29.1.0',
@@ -46,9 +48,10 @@ const STATIC_ASSETS = [
   './academy-course-landings-v27.js?v=27.0.0',
   './academy-experience-v30.js?v=30.0.0',
   './academy-learning-v31.js?v=31.0.0',
+  './academy-premium-journey-v32.js?v=32.0.0',
   './verificar-certificado.html',
   './verificar-certificado-v16.js?v=16.0.0',
-  './bootstrap.js?v=31.0.0',
+  './bootstrap.js?v=32.0.0',
   './supabase-config.js?v=7.0.0',
   './manifest.json?v=29.0.0',
   './brand/academy/icon.svg?v=29.2.0',
