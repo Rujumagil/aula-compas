@@ -1,0 +1,30 @@
+/* Compás Academy · Sidebar user card v29.6
+   Fondo azul permanente para la tarjeta de usuario.
+   No cambia entre reposo, seleccionado, hover, foco, visitado o activo. */
+
+html body.premium-ui-v8 .app-shell .sidebar .sidebar-bottom > a.user-mini,
+html body.premium-ui-v8 .app-shell .sidebar .sidebar-bottom > a.user-mini:link,
+html body.premium-ui-v8 .app-shell .sidebar .sidebar-bottom > a.user-mini:visited,
+html body.premium-ui-v8 .app-shell .sidebar .sidebar-bottom > a.user-mini:hover,
+html body.premium-ui-v8 .app-shell .sidebar .sidebar-bottom > a.user-mini:focus,
+html body.premium-ui-v8 .app-shell .sidebar .sidebar-bottom > a.user-mini:focus-visible,
+html body.premium-ui-v8 .app-shell .sidebar .sidebar-bottom > a.user-mini:active,
+html body.premium-ui-v8 .app-shell .sidebar .sidebar-bottom > a.user-mini[data-academy-user-card]{
+  background:linear-gradient(145deg,#12355B 0%,#2C537E 100%)!important;
+  background-color:#12355B!important;
+  border-color:rgba(247,249,252,.18)!important;
+  color:#F7F9FC!important;
+  box-shadow:0 12px 28px rgba(5,22,43,.24)!important;
+  transform:none!important;
+  filter:none!important;
+  opacity:1!important;
+}
+
+html body.premium-ui-v8 .app-shell .sidebar .sidebar-bottom > a.user-mini > span:not(.user-mini-avatar-fallback) > strong{
+  color:#F7F9FC!important;
+}
+
+html body.premium-ui-v8 .app-shell .sidebar .sidebar-bottom > a.user-mini[data-role='Administrador'] > span:not(.user-mini-avatar-fallback) > span,
+html body.premium-ui-v8 .app-shell .sidebar .sidebar-bottom > a.user-mini[data-role='Instructor'] > span:not(.user-mini-avatar-fallback) > span{
+  color:#F2D31B!important;
+}
