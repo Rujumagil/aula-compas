@@ -1,11 +1,10 @@
 (() => {
   const app = document.querySelector('#app');
   const BRAND_HARDFIX_HREF = 'academy-brand-hardfix-v29-2.css?v=29.2.0';
+  const USER_CARD_HREF = 'academy-sidebar-user-v29-3.css?v=29.3.0';
 
-  function ensureBrandHardfix() {
-    const id = 'academy-brand-hardfix-v29-2';
+  function ensureStylesheet(id, href) {
     let link = document.getElementById(id);
-    const href = BRAND_HARDFIX_HREF;
     if (!link) {
       link = document.createElement('link');
       link.id = id;
@@ -13,6 +12,11 @@
       document.head.appendChild(link);
     }
     if (link.getAttribute('href') !== href) link.setAttribute('href', href);
+  }
+
+  function ensureBrandHardfix() {
+    ensureStylesheet('academy-brand-hardfix-v29-2', BRAND_HARDFIX_HREF);
+    ensureStylesheet('academy-sidebar-user-v29-3', USER_CARD_HREF);
   }
 
   function renderStatus(title, message, showActions = false) {
@@ -85,6 +89,7 @@
 
       await loadScript('academy-brand-v29.js?v=29.2.0');
       await loadScript('app.js?v=6.0.15');
+      await loadScript('academy-sidebar-user-v29-3.js?v=29.3.0');
       await loadScript('academy-v7.js?v=7.0.0');
       await loadScript('academy-dashboard-v9.js?v=9.0.0');
       await loadScript('academy-ai-v10.js?v=10.0.0');
