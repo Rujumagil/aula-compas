@@ -31,7 +31,7 @@ jobs:
           test -s academy-premium-journey-v32.css
           test -s academy-premium-journey-v32.js
           grep -q "academy-premium-journey-v32.css?v=32.0.0" index.html
-          grep -q "bootstrap.js?v=32.0.0" index.html
+          grep -Eq "bootstrap.js\?v=(32|33)\.0\.0" index.html
           grep -q "academy-premium-journey-v32.css?v=32.0.0" bootstrap.js
           grep -q "academy-premium-journey-v32.js?v=32.0.0" bootstrap.js
           grep -q "assessment-v32-progress" academy-premium-journey-v32.js
@@ -41,10 +41,10 @@ jobs:
           grep -q "prefers-reduced-motion" academy-premium-journey-v32.css
           grep -q "academy-premium-journey-v32.css?v=32.0.0" verificar-certificado.html
           grep -q "academy-premium-journey-v32.js?v=32.0.0" verificar-certificado.html
-          grep -q "compas-academy-v32.0.0-premium-journey" sw.js
+          grep -Eq "compas-academy-v(32\.0\.0-premium-journey|33\.0\.0-premium-community)" sw.js
           grep -q "academy-premium-journey-v32.css?v=32.0.0" sw.js
           grep -q "academy-premium-journey-v32.js?v=32.0.0" sw.js
-          grep -q "bootstrap.js?v=32.0.0" sw.js
+          grep -Eq "bootstrap.js\?v=(32|33)\.0\.0" sw.js
 
       - name: Confirm scope remains UI only
         run: |

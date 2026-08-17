@@ -1,0 +1,53 @@
+name: Academy Premium Community V33 checks
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+      - 'fix/**'
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate-v33:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate JavaScript
+        run: |
+          node --check academy-premium-community-v33.js
+          node --check bootstrap.js
+          node --check sw.js
+
+      - name: Validate V33 assets and wiring
+        run: |
+          test -s academy-premium-community-v33.css
+          test -s academy-premium-community-v33.js
+          grep -q "academy-premium-community-v33.css?v=33.0.0" index.html
+          grep -q "bootstrap.js?v=33.0.0" index.html
+          grep -q "academy-premium-community-v33.css?v=33.0.0" bootstrap.js
+          grep -q "academy-premium-community-v33.js?v=33.0.0" bootstrap.js
+          grep -q "academy-mobile-nav-height" academy-premium-community-v33.css
+          grep -q "academy-modal-open-v33" academy-premium-community-v33.css
+          grep -q "syncTutorSafeArea" academy-premium-community-v33.js
+          grep -q "Abrir Tutor IA de Compás Academy" academy-premium-community-v33.js
+          grep -q "community-v21" academy-premium-community-v33.css
+          grep -q "academy-notification-card" academy-premium-community-v33.css
+          grep -q "library-page-heading" academy-premium-community-v33.css
+          grep -q "profile-page-heading" academy-premium-community-v33.css
+          grep -q "prefers-reduced-motion" academy-premium-community-v33.css
+          grep -q "compas-academy-v33.0.0-premium-community" sw.js
+          grep -q "academy-premium-community-v33.css?v=33.0.0" sw.js
+          grep -q "academy-premium-community-v33.js?v=33.0.0" sw.js
+          grep -q "bootstrap.js?v=33.0.0" sw.js
+
+      - name: Confirm UI-only scope
+        run: |
+          ! grep -qi "delete from\|truncate\|drop table" academy-premium-community-v33.js
