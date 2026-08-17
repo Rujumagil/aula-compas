@@ -1,3 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 60 60" role="img" aria-label="Compás Academy">
-  <image href="favicon.png" x="0" y="0" width="60" height="60" preserveAspectRatio="xMidYMid meet"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 444 444" role="img" aria-labelledby="title desc">
+  <title id="title">Compás Academy</title>
+  <desc id="desc">Isotipo oficial del búho de Compás Academy.</desc>
+  <image href="logo.png?v=29.0.0" x="0" y="0" width="444" height="444" preserveAspectRatio="xMidYMid meet"/>
 </svg>
