@@ -1,25 +1,26 @@
-/* Compás Academy · Sidebar user card v29.3
-   Integra la sesión del usuario al sidebar y elimina fallbacks visuales de marca usados como avatar. */
+/* Compás Academy · Sidebar user card v29.4
+   Ajuste visual directo del componente real .sidebar-bottom > .user-mini.
+   Prioriza legibilidad del nombre, integración con el sidebar y proporciones compactas. */
 
 .sidebar .sidebar-bottom{
-  left:18px!important;
-  right:18px!important;
-  bottom:20px!important;
+  left:14px!important;
+  right:14px!important;
+  bottom:18px!important;
 }
 
 .sidebar .user-mini{
   position:relative!important;
   display:grid!important;
-  grid-template-columns:46px minmax(0,1fr) 18px!important;
+  grid-template-columns:40px minmax(0,1fr) 12px!important;
   align-items:center!important;
-  gap:11px!important;
-  min-height:68px!important;
+  gap:9px!important;
+  min-height:72px!important;
   padding:10px 11px!important;
-  border-radius:17px!important;
+  border-radius:16px!important;
   color:#F7F9FC!important;
-  background:rgba(247,249,252,.075)!important;
-  border:1px solid rgba(247,249,252,.16)!important;
-  box-shadow:0 10px 26px rgba(7,25,48,.16)!important;
+  background:linear-gradient(145deg,rgba(18,53,91,.96),rgba(44,83,126,.92))!important;
+  border:1px solid rgba(247,249,252,.15)!important;
+  box-shadow:0 12px 28px rgba(5,22,43,.22)!important;
   backdrop-filter:blur(12px)!important;
   -webkit-backdrop-filter:blur(12px)!important;
   overflow:hidden!important;
@@ -27,7 +28,7 @@
 }
 
 .sidebar .user-mini:hover{
-  background:rgba(247,249,252,.12)!important;
+  background:linear-gradient(145deg,rgba(22,62,103,.98),rgba(54,94,139,.96))!important;
   border-color:rgba(230,196,0,.42)!important;
   transform:translateY(-1px)!important;
 }
@@ -36,27 +37,27 @@
   content:'›'!important;
   display:grid!important;
   place-items:center!important;
-  width:18px!important;
+  width:12px!important;
   height:18px!important;
   color:#E6C400!important;
-  font-size:1.15rem!important;
-  font-weight:500!important;
+  font-size:1rem!important;
+  font-weight:600!important;
   line-height:1!important;
-  opacity:.9!important;
+  opacity:.92!important;
 }
 
 .sidebar .user-mini > img{
-  width:46px!important;
-  height:46px!important;
-  min-width:46px!important;
+  width:40px!important;
+  height:40px!important;
+  min-width:40px!important;
   margin:0!important;
   padding:0!important;
   object-fit:cover!important;
   object-position:center!important;
   border-radius:50%!important;
   background:#12355B!important;
-  border:1px solid rgba(247,249,252,.22)!important;
-  box-shadow:none!important;
+  border:1px solid rgba(247,249,252,.24)!important;
+  box-shadow:0 5px 14px rgba(5,22,43,.18)!important;
 }
 
 .sidebar .user-mini > img[data-academy-avatar-fallback='true']{
@@ -66,23 +67,26 @@
 .sidebar .user-mini-avatar-fallback{
   display:grid!important;
   place-items:center!important;
-  width:46px!important;
-  height:46px!important;
-  min-width:46px!important;
+  width:40px!important;
+  height:40px!important;
+  min-width:40px!important;
   border-radius:50%!important;
-  background:linear-gradient(145deg,#3F6F9F,#12355B)!important;
+  background:linear-gradient(145deg,#315F97,#183B70)!important;
   color:#F7F9FC!important;
-  border:1px solid rgba(247,249,252,.22)!important;
+  border:1px solid rgba(247,249,252,.28)!important;
+  box-shadow:0 5px 14px rgba(5,22,43,.18)!important;
   font-family:'IBM Plex Sans','Inter',ui-sans-serif,system-ui,sans-serif!important;
-  font-size:.82rem!important;
+  font-size:.72rem!important;
   font-weight:700!important;
-  letter-spacing:.06em!important;
+  letter-spacing:.04em!important;
   line-height:1!important;
   text-transform:uppercase!important;
 }
 
 .sidebar .user-mini > span:not(.user-mini-avatar-fallback){
-  display:grid!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
   gap:3px!important;
   min-width:0!important;
   margin:0!important;
@@ -90,38 +94,44 @@
 }
 
 .sidebar .user-mini > span:not(.user-mini-avatar-fallback) > strong{
-  display:block!important;
+  display:-webkit-box!important;
   margin:0!important;
   max-width:100%!important;
   overflow:hidden!important;
   color:#F7F9FC!important;
   font-family:'IBM Plex Sans','Inter',ui-sans-serif,system-ui,sans-serif!important;
-  font-size:.78rem!important;
+  font-size:.72rem!important;
   font-weight:600!important;
-  line-height:1.2!important;
-  text-overflow:ellipsis!important;
-  white-space:nowrap!important;
+  line-height:1.22!important;
+  letter-spacing:-.005em!important;
+  white-space:normal!important;
+  text-overflow:clip!important;
+  -webkit-box-orient:vertical!important;
+  -webkit-line-clamp:2!important;
 }
 
 .sidebar .user-mini > span:not(.user-mini-avatar-fallback) > span{
   display:block!important;
   margin:0!important;
-  color:rgba(247,249,252,.70)!important;
+  color:rgba(247,249,252,.72)!important;
   font-family:'IBM Plex Sans','Inter',ui-sans-serif,system-ui,sans-serif!important;
-  font-size:.64rem!important;
-  font-weight:400!important;
-  line-height:1.2!important;
+  font-size:.59rem!important;
+  font-weight:500!important;
+  line-height:1.15!important;
   white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
 }
 
 .sidebar .user-mini[data-role='Administrador'] > span:not(.user-mini-avatar-fallback) > span,
 .sidebar .user-mini[data-role='Instructor'] > span:not(.user-mini-avatar-fallback) > span{
-  color:#E6C400!important;
-  font-weight:500!important;
+  color:#F2D31B!important;
+  font-weight:600!important;
 }
 
 @media(max-height:720px) and (min-width:761px){
-  .sidebar .sidebar-bottom{bottom:12px!important}
-  .sidebar .user-mini{min-height:60px!important;padding:8px 10px!important}
-  .sidebar .user-mini > img,.sidebar .user-mini-avatar-fallback{width:40px!important;height:40px!important;min-width:40px!important}
+  .sidebar .sidebar-bottom{bottom:10px!important}
+  .sidebar .user-mini{min-height:64px!important;padding:8px 10px!important}
+  .sidebar .user-mini > img,
+  .sidebar .user-mini-avatar-fallback{width:36px!important;height:36px!important;min-width:36px!important}
 }
