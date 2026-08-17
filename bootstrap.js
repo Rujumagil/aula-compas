@@ -5,7 +5,7 @@
     app.innerHTML = `
       <main class="login-screen">
         <section class="login-card glass loading-card">
-          <img class="official-lockup" src="brand/academy/logo.png?v=29.0.0" alt="Compás Academy">
+          <img class="official-lockup" src="brand/academy/icon.svg?v=29.0.0" alt="Compás Academy">
           <h1>${title}</h1>
           <p>${message}</p>
           ${showActions ? `
