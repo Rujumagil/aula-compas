@@ -1,0 +1,127 @@
+/* Compás Academy · Sidebar user card v29.3
+   Integra la sesión del usuario al sidebar y elimina fallbacks visuales de marca usados como avatar. */
+
+.sidebar .sidebar-bottom{
+  left:18px!important;
+  right:18px!important;
+  bottom:20px!important;
+}
+
+.sidebar .user-mini{
+  position:relative!important;
+  display:grid!important;
+  grid-template-columns:46px minmax(0,1fr) 18px!important;
+  align-items:center!important;
+  gap:11px!important;
+  min-height:68px!important;
+  padding:10px 11px!important;
+  border-radius:17px!important;
+  color:#F7F9FC!important;
+  background:rgba(247,249,252,.075)!important;
+  border:1px solid rgba(247,249,252,.16)!important;
+  box-shadow:0 10px 26px rgba(7,25,48,.16)!important;
+  backdrop-filter:blur(12px)!important;
+  -webkit-backdrop-filter:blur(12px)!important;
+  overflow:hidden!important;
+  transition:background .18s ease,border-color .18s ease,transform .18s ease!important;
+}
+
+.sidebar .user-mini:hover{
+  background:rgba(247,249,252,.12)!important;
+  border-color:rgba(230,196,0,.42)!important;
+  transform:translateY(-1px)!important;
+}
+
+.sidebar .user-mini::after{
+  content:'›'!important;
+  display:grid!important;
+  place-items:center!important;
+  width:18px!important;
+  height:18px!important;
+  color:#E6C400!important;
+  font-size:1.15rem!important;
+  font-weight:500!important;
+  line-height:1!important;
+  opacity:.9!important;
+}
+
+.sidebar .user-mini > img{
+  width:46px!important;
+  height:46px!important;
+  min-width:46px!important;
+  margin:0!important;
+  padding:0!important;
+  object-fit:cover!important;
+  object-position:center!important;
+  border-radius:50%!important;
+  background:#12355B!important;
+  border:1px solid rgba(247,249,252,.22)!important;
+  box-shadow:none!important;
+}
+
+.sidebar .user-mini > img[data-academy-avatar-fallback='true']{
+  display:none!important;
+}
+
+.sidebar .user-mini-avatar-fallback{
+  display:grid!important;
+  place-items:center!important;
+  width:46px!important;
+  height:46px!important;
+  min-width:46px!important;
+  border-radius:50%!important;
+  background:linear-gradient(145deg,#3F6F9F,#12355B)!important;
+  color:#F7F9FC!important;
+  border:1px solid rgba(247,249,252,.22)!important;
+  font-family:'IBM Plex Sans','Inter',ui-sans-serif,system-ui,sans-serif!important;
+  font-size:.82rem!important;
+  font-weight:700!important;
+  letter-spacing:.06em!important;
+  line-height:1!important;
+  text-transform:uppercase!important;
+}
+
+.sidebar .user-mini > span:not(.user-mini-avatar-fallback){
+  display:grid!important;
+  gap:3px!important;
+  min-width:0!important;
+  margin:0!important;
+  color:inherit!important;
+}
+
+.sidebar .user-mini > span:not(.user-mini-avatar-fallback) > strong{
+  display:block!important;
+  margin:0!important;
+  max-width:100%!important;
+  overflow:hidden!important;
+  color:#F7F9FC!important;
+  font-family:'IBM Plex Sans','Inter',ui-sans-serif,system-ui,sans-serif!important;
+  font-size:.78rem!important;
+  font-weight:600!important;
+  line-height:1.2!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+
+.sidebar .user-mini > span:not(.user-mini-avatar-fallback) > span{
+  display:block!important;
+  margin:0!important;
+  color:rgba(247,249,252,.70)!important;
+  font-family:'IBM Plex Sans','Inter',ui-sans-serif,system-ui,sans-serif!important;
+  font-size:.64rem!important;
+  font-weight:400!important;
+  line-height:1.2!important;
+  white-space:nowrap!important;
+}
+
+.sidebar .user-mini[data-role='Administrador'] > span:not(.user-mini-avatar-fallback) > span,
+.sidebar .user-mini[data-role='Instructor'] > span:not(.user-mini-avatar-fallback) > span{
+  color:#E6C400!important;
+  font-weight:500!important;
+}
+
+@media(max-height:720px) and (min-width:761px){
+  .sidebar .sidebar-bottom{bottom:12px!important}
+  .sidebar .user-mini{min-height:60px!important;padding:8px 10px!important}
+  .sidebar .user-mini > img,.sidebar .user-mini-avatar-fallback{width:40px!important;height:40px!important;min-width:40px!important}
+}
