@@ -1,0 +1,52 @@
+name: Academy Premium Journey V32 checks
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+      - 'fix/**'
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate-v32:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate JavaScript
+        run: |
+          node --check academy-premium-journey-v32.js
+          node --check bootstrap.js
+          node --check sw.js
+
+      - name: Validate V32 assets and wiring
+        run: |
+          test -s academy-premium-journey-v32.css
+          test -s academy-premium-journey-v32.js
+          grep -q "academy-premium-journey-v32.css?v=32.0.0" index.html
+          grep -q "bootstrap.js?v=32.0.0" index.html
+          grep -q "academy-premium-journey-v32.css?v=32.0.0" bootstrap.js
+          grep -q "academy-premium-journey-v32.js?v=32.0.0" bootstrap.js
+          grep -q "assessment-v32-progress" academy-premium-journey-v32.js
+          grep -q "onboarding-v32-progress" academy-premium-journey-v32.js
+          grep -q "is-issued-v32" academy-premium-journey-v32.js
+          grep -q "Tutor IA de Compás Academy" academy-premium-journey-v32.js
+          grep -q "prefers-reduced-motion" academy-premium-journey-v32.css
+          grep -q "academy-premium-journey-v32.css?v=32.0.0" verificar-certificado.html
+          grep -q "academy-premium-journey-v32.js?v=32.0.0" verificar-certificado.html
+          grep -q "compas-academy-v32.0.0-premium-journey" sw.js
+          grep -q "academy-premium-journey-v32.css?v=32.0.0" sw.js
+          grep -q "academy-premium-journey-v32.js?v=32.0.0" sw.js
+          grep -q "bootstrap.js?v=32.0.0" sw.js
+
+      - name: Confirm scope remains UI only
+        run: |
+          git diff --name-only HEAD^ HEAD || true
+          ! grep -qi "delete from\|truncate\|drop table" academy-premium-journey-v32.js
