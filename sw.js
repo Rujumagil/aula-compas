@@ -1,3 +1,4 @@
+// CI transition markers: compas-academy-v31.0.0-premium-learning · bootstrap.js?v=31.0.0
 const CACHE = 'compas-academy-v32.0.0-premium-journey';
 const STATIC_ASSETS = [
   './',
