@@ -1,11 +1,25 @@
 (() => {
   const app = document.querySelector('#app');
+  const BRAND_HARDFIX_HREF = 'academy-brand-hardfix-v29-2.css?v=29.2.0';
+
+  function ensureBrandHardfix() {
+    const id = 'academy-brand-hardfix-v29-2';
+    let link = document.getElementById(id);
+    const href = BRAND_HARDFIX_HREF;
+    if (!link) {
+      link = document.createElement('link');
+      link.id = id;
+      link.rel = 'stylesheet';
+      document.head.appendChild(link);
+    }
+    if (link.getAttribute('href') !== href) link.setAttribute('href', href);
+  }
 
   function renderStatus(title, message, showActions = false) {
     app.innerHTML = `
       <main class="login-screen">
         <section class="login-card glass loading-card">
-          <img class="official-lockup" src="brand/academy/icon.svg?v=29.0.0" alt="Compás Academy">
+          <img class="official-lockup" src="brand/academy/icon.svg?v=29.2.0" alt="Compás Academy">
           <h1>${title}</h1>
           <p>${message}</p>
           ${showActions ? `
@@ -61,6 +75,7 @@
   }
 
   async function start() {
+    ensureBrandHardfix();
     renderStatus('Compás Academy', 'Preparando tu acceso…');
     try {
       if (!window.SUPABASE_CONFIG?.url || !window.SUPABASE_CONFIG?.publishableKey) {
@@ -68,7 +83,7 @@
       }
       await loadSupabaseLibrary();
 
-      await loadScript('academy-brand-v29.js?v=29.0.0');
+      await loadScript('academy-brand-v29.js?v=29.2.0');
       await loadScript('app.js?v=6.0.15');
       await loadScript('academy-v7.js?v=7.0.0');
       await loadScript('academy-dashboard-v9.js?v=9.0.0');
@@ -83,6 +98,8 @@
       await loadScript('academy-community-v21.js?v=21.0.0');
       await loadScript('academy-accessibility-v22.js?v=22.0.0');
       await loadScript('academy-course-landings-v27.js?v=27.0.0');
+
+      ensureBrandHardfix();
 
       setTimeout(() => {
         if (document.querySelector('.loading-card')) {

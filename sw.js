@@ -1,4 +1,4 @@
-const CACHE = 'compas-academy-v29.0.0-brand-system';
+const CACHE = 'compas-academy-v29.2.0-brand-hardfix';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -19,9 +19,12 @@ const STATIC_ASSETS = [
   './academy-community-v21.css?v=21.0.0',
   './academy-accessibility-v22.css?v=22.0.0',
   './academy-course-landings-v27.css?v=27.0.0',
-  './academy-brand-v29.css?v=29.0.0',
+  './academy-brand-v29.css?v=29.2.0',
+  './academy-brand-visibility-v29-1.css?v=29.1.0',
+  './academy-brand-hardfix-v29-2.css?v=29.2.0',
   './app.js?v=6.0.15',
-  './academy-brand-v29.js?v=29.0.0',
+  './academy-brand-v29.js?v=29.2.0',
+  './academy-brand-visibility-v29-1.js?v=29.1.0',
   './academy-v7.js?v=7.0.0',
   './academy-premium.js?v=8.0.0',
   './academy-dashboard-v9.js?v=9.0.0',
@@ -38,11 +41,11 @@ const STATIC_ASSETS = [
   './academy-course-landings-v27.js?v=27.0.0',
   './verificar-certificado.html',
   './verificar-certificado-v16.js?v=16.0.0',
-  './bootstrap.js?v=29.0.0',
+  './bootstrap.js?v=29.2.0',
   './supabase-config.js?v=7.0.0',
   './manifest.json?v=29.0.0',
-  './brand/academy/icon.svg?v=29.0.0',
-  './brand/academy/icon-ice.svg?v=29.0.0',
+  './brand/academy/icon.svg?v=29.2.0',
+  './brand/academy/icon-ice.svg?v=29.2.0',
   './compas-evolution.svg',
   './diagnostico.html',
   './limpiar-cache.html',
@@ -63,25 +66,41 @@ self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => Promise.allSettled(STATIC_ASSETS.map(asset => cache.add(asset)))));
   self.skipWaiting();
 });
+
 self.addEventListener('activate', event => {
-  event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim()));
+  event.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key))))
+      .then(() => self.clients.claim())
+  );
 });
+
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
   const sameOrigin = url.origin === self.location.origin;
   const isCritical = event.request.mode === 'navigate' || (sameOrigin && /\.(?:html|js|css)$/i.test(url.pathname));
+
   if (isCritical) {
-    event.respondWith(fetch(event.request, { cache: 'no-store' }).then(response => {
-      if (response.ok && sameOrigin) caches.open(CACHE).then(cache => cache.put(event.request, response.clone()));
-      return response;
-    }).catch(() => caches.match(event.request).then(cached => cached || caches.match('./index.html'))));
+    event.respondWith(
+      fetch(event.request, { cache: 'no-store' })
+        .then(response => {
+          if (response.ok && sameOrigin) caches.open(CACHE).then(cache => cache.put(event.request, response.clone()));
+          return response;
+        })
+        .catch(() => caches.match(event.request).then(cached => cached || caches.match('./index.html')))
+    );
     return;
   }
+
   if (sameOrigin) {
-    event.respondWith(caches.match(event.request).then(cached => cached || fetch(event.request).then(response => {
-      if (response.ok) caches.open(CACHE).then(cache => cache.put(event.request, response.clone()));
-      return response;
-    })));
+    event.respondWith(
+      fetch(event.request, { cache: 'no-store' })
+        .then(response => {
+          if (response.ok) caches.open(CACHE).then(cache => cache.put(event.request, response.clone()));
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
   }
 });
