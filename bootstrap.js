@@ -5,6 +5,7 @@
   const EXPERIENCE_HREF = 'academy-experience-v30.css?v=30.0.0';
   const LEARNING_HREF = 'academy-learning-v31.css?v=31.0.0';
   const JOURNEY_HREF = 'academy-premium-journey-v32.css?v=32.0.0';
+  const COMMUNITY_HREF = 'academy-premium-community-v33.css?v=33.0.0';
 
   function ensureStylesheet(id, href) {
     let link = document.getElementById(id);
@@ -23,9 +24,10 @@
     ensureStylesheet('academy-sidebar-user-v29-3', USER_CARD_HREF);
     ensureStylesheet('academy-experience-v30', EXPERIENCE_HREF);
     ensureStylesheet('academy-learning-v31', LEARNING_HREF);
-    const journey = ensureStylesheet('academy-premium-journey-v32', JOURNEY_HREF);
-    // V32 es la última capa para evaluaciones, certificados, Tutor IA y onboarding.
-    if (journey !== document.head.lastElementChild) document.head.appendChild(journey);
+    ensureStylesheet('academy-premium-journey-v32', JOURNEY_HREF);
+    const community = ensureStylesheet('academy-premium-community-v33', COMMUNITY_HREF);
+    // V33 queda al final para Comunidad, Notificaciones, Perfil, Biblioteca y zona segura del Tutor IA.
+    if (community !== document.head.lastElementChild) document.head.appendChild(community);
   }
 
   function renderStatus(title, message, showActions = false) {
@@ -116,6 +118,7 @@
       await loadScript('academy-experience-v30.js?v=30.0.0');
       await loadScript('academy-learning-v31.js?v=31.0.0');
       await loadScript('academy-premium-journey-v32.js?v=32.0.0');
+      await loadScript('academy-premium-community-v33.js?v=33.0.0');
 
       ensureVisualLayers();
 
