@@ -5,7 +5,7 @@
     app.innerHTML = `
       <main class="login-screen">
         <section class="login-card glass loading-card">
-          <img class="official-lockup" src="brand/academy/logo.png?v=11.1.0" alt="Compás Academy">
+          <img class="official-lockup" src="brand/academy/icon.svg?v=29.0.0" alt="Compás Academy">
           <h1>${title}</h1>
           <p>${message}</p>
           ${showActions ? `
@@ -68,7 +68,7 @@
       }
       await loadSupabaseLibrary();
 
-      await loadScript('academy-brand-v11.js?v=11.1.0');
+      await loadScript('academy-brand-v29.js?v=29.0.0');
       await loadScript('app.js?v=6.0.15');
       await loadScript('academy-v7.js?v=7.0.0');
       await loadScript('academy-dashboard-v9.js?v=9.0.0');
@@ -86,7 +86,7 @@
 
       setTimeout(() => {
         if (document.querySelector('.loading-card')) {
-          renderStatus('No pudimos iniciar la academia', 'La aplicación tardó más de lo esperado. Abre el diagnóstico para identificar el punto exacto.', true);
+          renderStatus('No pudimos iniciar Compás Academy', 'La aplicación tardó más de lo esperado. Abre el diagnóstico para identificar el punto exacto.', true);
         }
       }, 15000);
     } catch (error) {

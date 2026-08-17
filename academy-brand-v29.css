@@ -1,0 +1,162 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;700&display=swap');
+
+/* Compás Academy · Brand System V29
+   Alineado con Manual de Marca Compás Evolution v1.0 · Agosto 2026. */
+:root{
+  --compas-blue:#12355B;
+  --compas-future-blue:#3F6F9F;
+  --compas-signal-yellow:#E6C400;
+  --compas-ice:#F7F9FC;
+  --compas-graphite:#111827;
+
+  /* Compatibilidad con capas visuales anteriores. */
+  --navy:var(--compas-blue);
+  --navy-2:var(--compas-blue);
+  --sky:var(--compas-ice);
+  --sky-2:var(--compas-future-blue);
+  --cream:var(--compas-ice);
+  --paper:var(--compas-ice);
+  --green:var(--compas-future-blue);
+  --green-2:var(--compas-blue);
+  --yellow:var(--compas-signal-yellow);
+  --gold:var(--compas-signal-yellow);
+  --gold-2:var(--compas-signal-yellow);
+  --ink:var(--compas-graphite);
+  --muted:#5F6F82;
+  --line:rgba(18,53,91,.13);
+  --gold-line:rgba(230,196,0,.28);
+  --shadow:0 18px 48px rgba(18,53,91,.10);
+
+  --course-blue:var(--compas-blue);
+  --course-night:var(--compas-blue);
+  --course-green:var(--compas-future-blue);
+  --course-gold:var(--compas-signal-yellow);
+  --course-ink:var(--compas-graphite);
+  --course-muted:#5F6F82;
+  --course-border:rgba(18,53,91,.13);
+  --course-shadow:0 24px 64px rgba(18,53,91,.10);
+}
+
+html,body,button,input,select,textarea{
+  font-family:"IBM Plex Sans","Inter",ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
+}
+body,.course-detail-body{
+  color:var(--compas-graphite)!important;
+  background:var(--compas-ice)!important;
+}
+body::before{background-image:none!important;opacity:0!important}
+
+h1,h2,h3,h4,h5,h6,
+.catalog-hero h1,.public-section-heading h2,.public-book-section h2,.instructor-section h2,
+.course-detail-copy h1,.course-section-heading h2,.course-audience-section h2,.course-requirements-grid h2,.course-final-cta h2{
+  font-family:"IBM Plex Sans","Inter",sans-serif!important;
+  color:var(--compas-graphite);
+}
+h1,h2,.catalog-hero h1,.course-detail-copy h1{font-weight:700!important}
+h3,h4,h5,h6{font-weight:500!important}
+p,li,small,label,input,select,textarea{font-weight:400}
+button,.btn,.course-btn,.nav-link{font-weight:500!important}
+
+::selection{background:rgba(230,196,0,.34);color:var(--compas-graphite)}
+:focus-visible{outline:3px solid rgba(230,196,0,.85)!important;outline-offset:3px!important}
+
+/* Logotipo: sin deformaciones, recolores por filtro, sombras o efectos. */
+img[data-academy-brand-v29="official"]{
+  object-fit:contain!important;
+  object-position:center!important;
+  filter:none!important;
+  transform:none!important;
+  image-rendering:auto!important;
+}
+.sidebar .brand img[data-academy-brand-v29="official"]{
+  width:62px!important;height:62px!important;padding:0!important;
+  background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;
+}
+.official-lockup[data-academy-brand-v29="official"],
+.loading-card img[data-academy-brand-v29="official"],
+.login-brand img[data-academy-brand-v29="official"]{
+  width:108px!important;height:108px!important;padding:0!important;
+  background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;
+}
+.academy-orbit-card img[data-academy-brand-v29="official"],
+.dash-v9-empty-logo img[data-academy-brand-v29="official"],
+.dash-v9-welcome aside img[data-academy-brand-v29="official"]{
+  background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important;
+}
+
+/* Wordmark común del ecosistema. */
+.sidebar .brand>span,.academy-wordmark span,.course-brand-link span,.brand-wordmark{
+  display:grid!important;gap:2px!important;line-height:1!important;
+}
+.sidebar .brand strong,.academy-wordmark strong,.course-brand-link strong,.brand-wordmark strong{
+  font-family:"IBM Plex Sans","Inter",sans-serif!important;
+  font-size:1rem!important;font-weight:700!important;letter-spacing:.045em!important;text-transform:uppercase!important;
+}
+.sidebar .brand>span>span,.academy-wordmark small,.course-brand-link small,.brand-wordmark small{
+  margin-top:5px!important;
+  font-family:"IBM Plex Sans","Inter",sans-serif!important;
+  font-size:.64rem!important;font-weight:400!important;letter-spacing:.28em!important;text-transform:uppercase!important;
+}
+.sidebar .brand strong{color:var(--compas-ice)!important}
+.sidebar .brand>span>span{color:rgba(247,249,252,.78)!important}
+.academy-wordmark strong,.course-brand-link strong{color:var(--compas-blue)!important}
+.academy-wordmark small,.course-brand-link small{color:var(--compas-future-blue)!important}
+
+/* Superficies institucionales. */
+.glass,.login-card,.auth-layout .login-card,.dashboard-summary article,.course-card,.learning-course-card,
+.resource-card,.settings-card,.profile-card,.admin-card,.catalog-card,.instructor-section,
+.course-summary-card,.course-outcomes-grid article,.course-syllabus article,.course-requirements-grid article,.course-not-found-card{
+  background:var(--compas-ice)!important;
+  border-color:rgba(18,53,91,.13)!important;
+  box-shadow:0 14px 34px rgba(18,53,91,.07)!important;
+}
+.topbar,.mobile-nav,.academy-public-header{background:rgba(247,249,252,.96)!important;border-color:rgba(18,53,91,.13)!important}
+.sidebar,.academy-public-footer,.course-final-cta,.academy-route-card{
+  background:var(--compas-blue)!important;
+}
+.sidebar::before{display:none!important}
+
+/* Acciones. Signal Yellow solo como acento de decisión. */
+.btn-primary,.course-btn-primary{
+  background:var(--compas-signal-yellow)!important;
+  color:var(--compas-graphite)!important;
+  border-color:var(--compas-signal-yellow)!important;
+  box-shadow:none!important;
+}
+.btn-primary:hover,.course-btn-primary:hover{filter:brightness(.97)!important}
+.btn-secondary,.course-btn-secondary{
+  background:transparent!important;
+  color:var(--compas-blue)!important;
+  border-color:rgba(18,53,91,.25)!important;
+  box-shadow:none!important;
+}
+.sidebar .nav-link.active{box-shadow:inset 3px 0 0 var(--compas-signal-yellow)!important}
+.nav-icon,.badge,.course-syllabus article>span{color:var(--compas-signal-yellow)!important}
+.badge{background:rgba(230,196,0,.16)!important}
+
+/* Future Blue reemplaza acentos verdes anteriores. */
+.eyebrow,.product-kicker,.text-link,.auth-link,.back-link,.topbar-heading small,
+.catalog-card-body>small,.course-eyebrow,.course-back-link{color:var(--compas-future-blue)!important}
+.status-pill.available,.toast[data-type="success"]{background:var(--compas-future-blue)!important;color:var(--compas-ice)!important}
+.spinner{border-color:rgba(18,53,91,.12)!important;border-top-color:var(--compas-future-blue)!important}
+.progress-track>span,.mini-progress>span,.learning-progress-track>span{background:var(--compas-future-blue)!important}
+
+/* Public / curso: sin verdes fuera de paleta. */
+.course-detail-body{background:var(--compas-ice)!important}
+.course-badges .is-available{background:rgba(63,111,159,.11)!important;color:var(--compas-future-blue)!important}
+.course-badges .is-preparing{background:rgba(230,196,0,.13)!important;color:#6B5A00!important}
+.course-audience-section li::before{color:var(--compas-future-blue)!important}
+.course-final-cta .course-eyebrow{color:var(--compas-signal-yellow)!important}
+.course-final-cta h2,.course-final-cta p{color:var(--compas-ice)!important}
+
+/* Marca en fondos oscuros: Ice White, sin placa blanca ni efectos. */
+.sidebar img[data-academy-on-dark="true"],
+.academy-public-footer img[data-academy-on-dark="true"],
+.auth-story img[data-academy-on-dark="true"]{
+  background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:0!important;
+}
+
+@media(max-width:760px){
+  .sidebar .brand strong,.academy-wordmark strong,.course-brand-link strong{font-size:.84rem!important}
+  .sidebar .brand>span>span,.academy-wordmark small,.course-brand-link small{font-size:.56rem!important;letter-spacing:.22em!important}
+}
