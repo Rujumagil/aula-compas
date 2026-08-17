@@ -1,4 +1,4 @@
-const CACHE = 'compas-academy-v29.3.0-sidebar-user-card';
+const CACHE = 'compas-academy-v30.0.0-premium-experience';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -23,6 +23,8 @@ const STATIC_ASSETS = [
   './academy-brand-visibility-v29-1.css?v=29.1.0',
   './academy-brand-hardfix-v29-2.css?v=29.2.0',
   './academy-sidebar-user-v29-3.css?v=29.3.0',
+  './academy-sidebar-user-v29-6.css?v=29.6.0',
+  './academy-experience-v30.css?v=30.0.0',
   './app.js?v=6.0.15',
   './academy-brand-v29.js?v=29.2.0',
   './academy-brand-visibility-v29-1.js?v=29.1.0',
@@ -41,9 +43,10 @@ const STATIC_ASSETS = [
   './academy-community-v21.js?v=21.0.0',
   './academy-accessibility-v22.js?v=22.0.0',
   './academy-course-landings-v27.js?v=27.0.0',
+  './academy-experience-v30.js?v=30.0.0',
   './verificar-certificado.html',
   './verificar-certificado-v16.js?v=16.0.0',
-  './bootstrap.js?v=29.3.0',
+  './bootstrap.js?v=30.0.0',
   './supabase-config.js?v=7.0.0',
   './manifest.json?v=29.0.0',
   './brand/academy/icon.svg?v=29.2.0',
