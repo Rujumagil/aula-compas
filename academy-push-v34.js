@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = '34.0.0';
+  const VERSION = '34.1.0';
   const PUSH_CONFIG_URL = 'https://app.proyectocompas.com/api/public/push/config';
   const DISMISS_KEY = 'compas-academy:push-prompt-dismissed';
   const DISMISS_MS = 12 * 60 * 60 * 1000;
@@ -179,6 +179,25 @@
     }
   }
 
+  function scheduleAlertTone(context, frequency, start, duration, volume) {
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    const attackEnd = start + 0.008;
+    const holdEnd = start + Math.max(0.045, duration * 0.58);
+    const releaseEnd = start + Math.max(0.07, duration);
+
+    oscillator.type = 'triangle';
+    oscillator.frequency.setValueAtTime(frequency, start);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(volume, attackEnd);
+    gain.gain.setValueAtTime(volume, holdEnd);
+    gain.gain.exponentialRampToValueAtTime(0.0001, releaseEnd);
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start(start);
+    oscillator.stop(releaseEnd + 0.025);
+  }
+
   async function playAlertTone(type) {
     const context = ensureAudioContext();
     if (!context) return;
@@ -189,23 +208,16 @@
 
     const important = ['certificate_ready', 'inactivity', 'payment_issue'].includes(type);
     const now = context.currentTime + 0.015;
-    const tones = important ? [[720, 0], [880, 0.14]] : [[660, 0]];
 
-    tones.forEach(([frequency, offset]) => {
-      const oscillator = context.createOscillator();
-      const gain = context.createGain();
-      const start = now + offset;
-      const duration = 0.12;
-      oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(frequency, start);
-      gain.gain.setValueAtTime(0.0001, start);
-      gain.gain.exponentialRampToValueAtTime(important ? 0.055 : 0.04, start + 0.015);
-      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
-      oscillator.connect(gain);
-      gain.connect(context.destination);
-      oscillator.start(start);
-      oscillator.stop(start + duration + 0.02);
-    });
+    if (important) {
+      scheduleAlertTone(context, 760, now, 0.15, 0.21);
+      scheduleAlertTone(context, 980, now + 0.14, 0.15, 0.24);
+      scheduleAlertTone(context, 860, now + 0.30, 0.16, 0.21);
+      return;
+    }
+
+    scheduleAlertTone(context, 740, now, 0.15, 0.16);
+    scheduleAlertTone(context, 920, now + 0.14, 0.16, 0.18);
   }
 
   async function subscribeRealtime(userId) {
