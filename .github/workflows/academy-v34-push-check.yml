@@ -1,0 +1,51 @@
+name: Academy Push V34 checks
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+      - 'fix/**'
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate-v34:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate JavaScript
+        run: |
+          node --check academy-push-v34.js
+          node --check bootstrap.js
+          node --check sw.js
+
+      - name: Validate V34 assets and wiring
+        run: |
+          test -s academy-push-v34.css
+          test -s academy-push-v34.js
+          test -s 35-academy-push-v34.sql
+          grep -q "academy-push-v34.css?v=34.0.0" index.html
+          grep -q "bootstrap.js?v=34.0.0" index.html
+          grep -q "academy-push-v34.css?v=34.0.0" bootstrap.js
+          grep -q "academy-push-v34.js?v=34.0.0" bootstrap.js
+          grep -q "compas-academy-v34.0.0-push" sw.js
+          grep -q "self.addEventListener('push'" sw.js
+          grep -q "self.addEventListener('notificationclick'" sw.js
+          grep -q "academy-push-v34.css?v=34.0.0" sw.js
+          grep -q "academy-push-v34.js?v=34.0.0" sw.js
+          grep -q "bootstrap.js?v=34.0.0" sw.js
+          grep -q "register_academy_push_v34" 35-academy-push-v34.sql
+          grep -q "academy_notification_push_v34" 35-academy-push-v34.sql
+          grep -q "app_scope" 35-academy-push-v34.sql
+          grep -q "supabase_realtime" 35-academy-push-v34.sql
+
+      - name: Confirm safe migration scope
+        run: |
+          ! grep -qi "delete from\|truncate\|drop table" 35-academy-push-v34.sql
