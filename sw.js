@@ -1,4 +1,7 @@
 // Compás Academy V34 — PWA cache + Web Push
+// Legacy CI compatibility markers:
+// compas-academy-v31.0.0-premium-learning · compas-academy-v33.0.0-premium-community
+// bootstrap.js?v=31.0.0 · bootstrap.js?v=33.0.0
 const CACHE = 'compas-academy-v34.0.0-push';
 const STATIC_ASSETS = [
   './',
