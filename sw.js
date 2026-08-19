@@ -1,5 +1,5 @@
-// CI transition markers: compas-academy-v31.0.0-premium-learning · bootstrap.js?v=31.0.0
-const CACHE = 'compas-academy-v33.0.0-premium-community';
+// Compás Academy V34 — PWA cache + Web Push
+const CACHE = 'compas-academy-v34.0.0-push';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -29,6 +29,7 @@ const STATIC_ASSETS = [
   './academy-learning-v31.css?v=31.0.0',
   './academy-premium-journey-v32.css?v=32.0.0',
   './academy-premium-community-v33.css?v=33.0.0',
+  './academy-push-v34.css?v=34.0.0',
   './app.js?v=6.0.15',
   './academy-brand-v29.js?v=29.2.0',
   './academy-brand-visibility-v29-1.js?v=29.1.0',
@@ -51,13 +52,15 @@ const STATIC_ASSETS = [
   './academy-learning-v31.js?v=31.0.0',
   './academy-premium-journey-v32.js?v=32.0.0',
   './academy-premium-community-v33.js?v=33.0.0',
+  './academy-push-v34.js?v=34.0.0',
   './verificar-certificado.html',
   './verificar-certificado-v16.js?v=16.0.0',
-  './bootstrap.js?v=33.0.0',
+  './bootstrap.js?v=34.0.0',
   './supabase-config.js?v=7.0.0',
   './manifest.json?v=29.0.0',
   './brand/academy/icon.svg?v=29.2.0',
   './brand/academy/icon-ice.svg?v=29.2.0',
+  './brand/academy/favicon.png?v=34.0.0',
   './compas-evolution.svg',
   './diagnostico.html',
   './limpiar-cache.html',
@@ -75,7 +78,10 @@ const STATIC_ASSETS = [
 ];
 
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE).then(cache => Promise.allSettled(STATIC_ASSETS.map(asset => cache.add(asset)))));
+  event.waitUntil(
+    caches.open(CACHE)
+      .then(cache => Promise.allSettled(STATIC_ASSETS.map(asset => cache.add(asset))))
+  );
   self.skipWaiting();
 });
 
@@ -115,4 +121,64 @@ self.addEventListener('fetch', event => {
         .catch(() => caches.match(event.request))
     );
   }
+});
+
+self.addEventListener('push', event => {
+  event.waitUntil((async () => {
+    let payload = {};
+    try {
+      payload = event.data ? event.data.json() : {};
+    } catch {
+      payload = {};
+    }
+
+    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const visible = windows.some(client => client.visibilityState === 'visible');
+    const title = typeof payload.title === 'string' && payload.title ? payload.title : 'Compás Academy';
+    const body = typeof payload.body === 'string' && payload.body ? payload.body : 'Tienes una nueva actualización en tu Academy.';
+    const priority = payload.priority === 'urgent' ? 'urgent' : payload.priority === 'important' ? 'important' : 'normal';
+    const href = typeof payload.href === 'string' && payload.href.startsWith('/') ? payload.href : '/';
+    const notificationId = typeof payload.notificationId === 'string' ? payload.notificationId : String(Date.now());
+    const vibration = priority === 'urgent'
+      ? [220, 90, 220, 90, 280]
+      : priority === 'important'
+        ? [180, 80, 180]
+        : [120];
+
+    await self.registration.showNotification(title, {
+      body,
+      icon: '/brand/academy/favicon.png?v=34.0.0',
+      badge: '/brand/academy/favicon.png?v=34.0.0',
+      tag: `compas-academy-${notificationId}`,
+      renotify: priority === 'urgent',
+      requireInteraction: priority === 'urgent' && !visible,
+      silent: visible,
+      vibrate: visible ? undefined : vibration,
+      timestamp: typeof payload.createdAt === 'string'
+        ? Date.parse(payload.createdAt) || Date.now()
+        : Date.now(),
+      data: { href, notificationId }
+    });
+  })());
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  event.waitUntil((async () => {
+    const href = event.notification?.data?.href && String(event.notification.data.href).startsWith('/')
+      ? String(event.notification.data.href)
+      : '/';
+    const targetUrl = new URL(href, self.location.origin).href;
+    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+
+    for (const client of windows) {
+      if ('navigate' in client) await client.navigate(targetUrl).catch(() => null);
+      if ('focus' in client) {
+        await client.focus();
+        return;
+      }
+    }
+
+    if (self.clients.openWindow) await self.clients.openWindow(targetUrl);
+  })());
 });
