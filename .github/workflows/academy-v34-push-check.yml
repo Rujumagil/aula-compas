@@ -35,6 +35,33 @@ jobs:
           ! grep -qi "service_role\|serviceRole\|SUPABASE_SERVICE_ROLE" supabase-config.js
           ! grep -qi "TU-PROYECTO\|TU_SUPABASE\|YOUR_SUPABASE" supabase-config.js
 
+      - name: Validate local assets linked by the Academy shell
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          from urllib.parse import urlsplit
+
+          html = Path('index.html').read_text(encoding='utf-8')
+          refs = re.findall(r'''(?:href|src)=["']([^"']+)["']''', html, flags=re.I)
+          local_assets = []
+          for ref in refs:
+              clean = ref.strip()
+              if not clean or clean.startswith(('#', 'data:', 'mailto:', 'tel:', '//')):
+                  continue
+              parsed = urlsplit(clean)
+              if parsed.scheme or parsed.netloc:
+                  continue
+              path = parsed.path.lstrip('./')
+              if path.endswith(('.css', '.js')):
+                  local_assets.append(path)
+
+          missing = [path for path in sorted(set(local_assets)) if not Path(path).is_file() or Path(path).stat().st_size == 0]
+          if missing:
+              raise SystemExit('Missing or empty local Academy assets: ' + ', '.join(missing))
+          print(f'Validated {len(set(local_assets))} local CSS/JS assets linked from index.html')
+          PY
+
       - name: Validate PWA manifest
         run: |
           test -s manifest.json
