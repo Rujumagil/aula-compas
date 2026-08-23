@@ -27,6 +27,36 @@ jobs:
           node --check sw.js
           node --check supabase-config.js
 
+      - name: Validate production JavaScript loaded by bootstrap
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          import subprocess
+          from urllib.parse import urlsplit
+
+          bootstrap = Path('bootstrap.js').read_text(encoding='utf-8')
+          refs = re.findall(r"loadScript\(\s*['\"]([^'\"]+\.js(?:\?[^'\"]*)?)['\"]", bootstrap)
+          local_scripts = []
+          for ref in refs:
+              parsed = urlsplit(ref)
+              if parsed.scheme or parsed.netloc or ref.startswith('//'):
+                  continue
+              path = parsed.path.lstrip('./')
+              if path:
+                  local_scripts.append(path)
+
+          scripts = sorted(set(local_scripts))
+          missing = [path for path in scripts if not Path(path).is_file() or Path(path).stat().st_size == 0]
+          if missing:
+              raise SystemExit('Missing or empty JavaScript loaded by bootstrap: ' + ', '.join(missing))
+
+          for path in scripts:
+              subprocess.run(['node', '--check', path], check=True)
+
+          print(f'Validated syntax for {len(scripts)} production scripts loaded by bootstrap.js')
+          PY
+
       - name: Validate public Supabase configuration
         run: |
           test -s supabase-config.js
