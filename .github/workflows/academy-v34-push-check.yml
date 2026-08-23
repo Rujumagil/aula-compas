@@ -25,6 +25,15 @@ jobs:
           node --check academy-push-v34.js
           node --check bootstrap.js
           node --check sw.js
+          node --check supabase-config.js
+
+      - name: Validate public Supabase configuration
+        run: |
+          test -s supabase-config.js
+          grep -q "https://.*\.supabase\.co" supabase-config.js
+          grep -q "publishableKey" supabase-config.js
+          ! grep -qi "service_role\|serviceRole\|SUPABASE_SERVICE_ROLE" supabase-config.js
+          ! grep -qi "TU-PROYECTO\|TU_SUPABASE\|YOUR_SUPABASE" supabase-config.js
 
       - name: Validate V34.1 assets, sound and wiring
         run: |
