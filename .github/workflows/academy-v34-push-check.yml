@@ -35,6 +35,16 @@ jobs:
           ! grep -qi "service_role\|serviceRole\|SUPABASE_SERVICE_ROLE" supabase-config.js
           ! grep -qi "TU-PROYECTO\|TU_SUPABASE\|YOUR_SUPABASE" supabase-config.js
 
+      - name: Validate PWA manifest
+        run: |
+          test -s manifest.json
+          test -s brand/academy/icon.svg
+          test -s brand/academy/apple-touch.png
+          python -m json.tool manifest.json >/dev/null
+          grep -q '"start_url": "./index.html#home"' manifest.json
+          grep -q '"display": "standalone"' manifest.json
+          grep -q 'brand/academy/icon.svg' manifest.json
+
       - name: Validate V34.1 assets, sound and wiring
         run: |
           test -s academy-push-v34.css
