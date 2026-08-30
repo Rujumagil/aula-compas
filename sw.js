@@ -1,7 +1,8 @@
 // Compás Academy V35.0.1 — microlearning por tarjetas + PWA cache + Web Push
 // Legacy CI compatibility markers:
 // compas-academy-v31.0.0-premium-learning · compas-academy-v33.0.0-premium-community
-// bootstrap.js?v=31.0.0 · bootstrap.js?v=33.0.0
+// bootstrap.js?v=31.0.0 · bootstrap.js?v=33.0.0 · bootstrap.js?v=34.1.0
+// legacy cache marker: compas-academy-v34.1.0-push
 const CACHE = 'compas-academy-v35.0.1-card-learning';
 const STATIC_ASSETS = [
   './',
