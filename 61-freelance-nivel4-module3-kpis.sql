@@ -15,22 +15,13 @@ begin
   select id into v_course from public.courses where slug='nivel-4-liderazgo-supervision-comercial' limit 1;
   if v_course is null then raise exception 'Nivel 4 course is required'; end if;
   if exists(select 1 from public.courses where id=v_course and status<>'draft') then raise exception 'Nivel 4 must remain draft'; end if;
-
   select id into v_module from public.modules where course_id=v_course and position=3 limit 1;
-  if v_module is null then
-    insert into public.modules(course_id,title,description,position)
-    values(v_course,'3. Dirección por KPIs y decisiones de equipo','Lee el embudo, protege capacidad y construye forecasts responsables para intervenir con evidencia.',3)
-    returning id into v_module;
-  else
-    update public.modules set title='3. Dirección por KPIs y decisiones de equipo',description='Lee el embudo, protege capacidad y construye forecasts responsables para intervenir con evidencia.' where id=v_module;
-  end if;
-
+  if v_module is null then insert into public.modules(course_id,title,description,position) values(v_course,'3. Dirección por KPIs y decisiones de equipo','Lee el embudo, protege capacidad y construye forecasts responsables para intervenir con evidencia.',3) returning id into v_module; else update public.modules set title='3. Dirección por KPIs y decisiones de equipo',description='Lee el embudo, protege capacidad y construye forecasts responsables para intervenir con evidencia.' where id=v_module; end if;
   for jl in select * from jsonb_array_elements(lessons) loop
     if exists(select 1 from public.lessons where module_id=v_module and position=(jl->>'p')::int) then
-      update public.lessons set title=jl->>'t',description=jl->>'d',duration_minutes=(jl->>'m')::int,content=jsonb_build_object('objective',jl->>'objective','core',jl->>'core','method',jl->>'method','case',jl->>'case','practice',jl->>'practice','platform',jl->>'platform','video',jl->>'video') where module_id=v_module and position=(jl->>'p')::int;
+      update public.lessons set title=jl->>'t',description=jl->>'d',lesson_type='text',duration_minutes=(jl->>'m')::int,content_html='<h2>Objetivo</h2><p>'||(jl->>'objective')||'</p><h2>Contenido</h2><p>'||(jl->>'core')||'</p><h2>Método</h2><p>'||(jl->>'method')||'</p><h2>Caso</h2><p>'||(jl->>'case')||'</p><h2>Ejercicio</h2><p>'||(jl->>'practice')||'</p><h2>Aplicación en Compás One</h2><p>'||(jl->>'platform')||'</p><h2>Guion de video</h2><p>'||(jl->>'video')||'</p>',updated_at=now() where module_id=v_module and position=(jl->>'p')::int;
     else
-      insert into public.lessons(module_id,title,description,position,duration_minutes,content)
-      values(v_module,jl->>'t',jl->>'d',(jl->>'p')::int,(jl->>'m')::int,jsonb_build_object('objective',jl->>'objective','core',jl->>'core','method',jl->>'method','case',jl->>'case','practice',jl->>'practice','platform',jl->>'platform','video',jl->>'video'));
+      insert into public.lessons(module_id,title,description,lesson_type,content_html,duration_minutes,position,is_preview) values(v_module,jl->>'t',jl->>'d','text','<h2>Objetivo</h2><p>'||(jl->>'objective')||'</p><h2>Contenido</h2><p>'||(jl->>'core')||'</p><h2>Método</h2><p>'||(jl->>'method')||'</p><h2>Caso</h2><p>'||(jl->>'case')||'</p><h2>Ejercicio</h2><p>'||(jl->>'practice')||'</p><h2>Aplicación en Compás One</h2><p>'||(jl->>'platform')||'</p><h2>Guion de video</h2><p>'||(jl->>'video')||'</p>',(jl->>'m')::int,(jl->>'p')::int,false);
     end if;
   end loop;
 end $m$;
