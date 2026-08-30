@@ -4,6 +4,7 @@
   const USER_CARD_HREF = 'academy-sidebar-user-v29-3.css?v=29.3.0';
   const EXPERIENCE_HREF = 'academy-experience-v30.css?v=30.0.0';
   const LEARNING_HREF = 'academy-learning-v31.css?v=31.0.0';
+  const CARD_LEARNING_HREF = 'academy-card-learning-v35.css?v=35.0.1';
   const JOURNEY_HREF = 'academy-premium-journey-v32.css?v=32.0.0';
   const COMMUNITY_HREF = 'academy-premium-community-v33.css?v=33.0.0';
   const PUSH_HREF = 'academy-push-v34.css?v=34.0.0';
@@ -25,10 +26,10 @@
     ensureStylesheet('academy-sidebar-user-v29-3', USER_CARD_HREF);
     ensureStylesheet('academy-experience-v30', EXPERIENCE_HREF);
     ensureStylesheet('academy-learning-v31', LEARNING_HREF);
+    ensureStylesheet('academy-card-learning-v35', CARD_LEARNING_HREF);
     ensureStylesheet('academy-premium-journey-v32', JOURNEY_HREF);
     ensureStylesheet('academy-premium-community-v33', COMMUNITY_HREF);
     const push = ensureStylesheet('academy-push-v34', PUSH_HREF);
-    // V34 queda al final para que el prompt Push respete la zona segura móvil.
     if (push !== document.head.lastElementChild) document.head.appendChild(push);
   }
 
@@ -119,12 +120,18 @@
       await loadScript('academy-course-landings-v27.js?v=27.0.0');
       await loadScript('academy-experience-v30.js?v=30.0.0');
       await loadScript('academy-learning-v31.js?v=31.0.0');
-      await loadScript('academy-card-learning-v35.js?v=35.0.0');
+      await loadScript('academy-card-learning-v35.js?v=35.0.1');
       await loadScript('academy-premium-journey-v32.js?v=32.0.0');
       await loadScript('academy-premium-community-v33.js?v=33.0.0');
       await loadScript('academy-push-v34.js?v=34.1.0');
 
       ensureVisualLayers();
+
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js?v=35.0.1', { updateViaCache: 'none' })
+          .then(registration => registration.update())
+          .catch(error => console.warn('No se pudo actualizar el service worker V35:', error));
+      }
 
       setTimeout(() => {
         if (document.querySelector('.loading-card')) {
