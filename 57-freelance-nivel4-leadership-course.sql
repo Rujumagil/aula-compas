@@ -18,7 +18,7 @@ declare
     ]}
   ]$c$::jsonb;
 begin
-  select c.workspace_id into v_workspace from public.courses c where c.slug='nivel-3-cartera-permanencia-crecimiento' limit 1;
+  select c.workspace_id into v_workspace from public.courses c where c.slug='nivel-3-cartera-permanencia-crecimiento-compas' limit 1;
   if v_workspace is null then raise exception 'Nivel 3 course is required'; end if;
 
   select c.id into v_course from public.courses c where c.slug='nivel-4-liderazgo-supervision-comercial' limit 1;
