@@ -119,6 +119,7 @@
       await loadScript('academy-course-landings-v27.js?v=27.0.0');
       await loadScript('academy-experience-v30.js?v=30.0.0');
       await loadScript('academy-learning-v31.js?v=31.0.0');
+      await loadScript('academy-card-learning-v35.js?v=35.0.0');
       await loadScript('academy-premium-journey-v32.js?v=32.0.0');
       await loadScript('academy-premium-community-v33.js?v=33.0.0');
       await loadScript('academy-push-v34.js?v=34.1.0');
