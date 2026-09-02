@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = '1.0.0';
+  const VERSION = '1.1.0';
   const TABLE_MAP = Object.freeze({
     profiles: 'academy_profiles',
     courses: 'academy_courses',
@@ -7,6 +7,7 @@
     lessons: 'academy_lessons',
     enrollments: 'academy_enrollments',
     lesson_progress: 'academy_lesson_progress',
+    lesson_slide_progress: 'academy_lesson_slide_progress',
     lesson_notes: 'academy_lesson_notes',
     resources: 'academy_resources',
     lesson_blocks: 'academy_lesson_blocks',
