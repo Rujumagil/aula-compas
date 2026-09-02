@@ -1,4 +1,5 @@
 (() => {
+  const VERSION = '36.1.0';
   const FREELANCE_PROGRAMS = [
     {
       slug: 'nivel-1-inicio-comercial-compas',
@@ -53,6 +54,92 @@
   ];
 
   const allowedSlugs = new Set(FREELANCE_PROGRAMS.map(course => course.slug));
+  const safe = value => typeof escapeHtml === 'function'
+    ? escapeHtml(String(value ?? ''))
+    : String(value ?? '').replace(/[&<>"']/g, ch => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' })[ch]);
+
+  function normalizeFreelanceCourses() {
+    if (typeof state === 'undefined' || !Array.isArray(state.courses)) return [];
+    state.courses = state.courses
+      .filter(course => allowedSlugs.has(String(course?.slug || '')) && course?.status === 'published')
+      .map(course => ({
+        ...course,
+        modules: Array.isArray(course?.modules)
+          ? course.modules.map(module => ({
+              ...module,
+              lessons: Array.isArray(module?.lessons) ? module.lessons : []
+            }))
+          : []
+      }));
+    return state.courses;
+  }
+
+  function fallbackCoursesMarkup(courses, error = null) {
+    if (!courses.length) {
+      return `
+        <section class="empty-state glass">
+          <img src="brand/academy/icon.svg?v=29.2.0" alt="" class="empty-logo">
+          <h2>No pudimos mostrar tus cursos</h2>
+          <p>Tu sesión está activa, pero la lista de cursos no terminó de cargar. Usa Actualizar para volver a consultar tus accesos.</p>
+          <button class="btn btn-primary" type="button" data-freelance-retry>Actualizar cursos</button>
+        </section>`;
+    }
+
+    return `
+      <section class="courses-page-heading">
+        <div>
+          <span class="eyebrow">Ruta Freelance Compás</span>
+          <h1 class="page-title">Mis cursos</h1>
+          <p class="page-subtitle">Accede a tu capacitación comercial y continúa desde el nivel que estés revisando.</p>
+        </div>
+      </section>
+      ${error ? '<div class="glass" style="padding:14px 18px;margin-bottom:18px"><strong>Vista recuperada automáticamente.</strong><p style="margin:6px 0 0">Detectamos un fallo visual y restauramos tus cursos sin perder tu acceso.</p></div>' : ''}
+      <section class="learning-course-list" id="course-grid">
+        ${courses.map(course => {
+          const lessons = (course.modules || []).flatMap(module => module.lessons || []);
+          return `
+            <article class="learning-course-card">
+              <a class="learning-course-cover" href="#course/${safe(course.id)}" aria-label="Abrir ${safe(course.title)}">
+                <img src="brand/academy/logo.png?v=34.0.0" alt="${safe(course.title)}">
+              </a>
+              <div class="learning-course-body">
+                <div class="learning-course-topline"><span class="course-status course-status-new"><i></i>Disponible</span><span class="learning-course-category">Freelance Comercial</span></div>
+                <div><h3><a href="#course/${safe(course.id)}">${safe(course.title)}</a></h3><p>${safe(course.subtitle || course.description || '')}</p></div>
+                <div class="learning-course-details"><span><small>Contenido</small><strong>${lessons.length} lecciones</strong></span><span><small>Módulos</small><strong>${(course.modules || []).length}</strong></span></div>
+                <div class="learning-course-actions"><a class="btn btn-primary learning-primary-action" href="#course/${safe(course.id)}">Abrir curso</a></div>
+              </div>
+            </article>`;
+        }).join('')}
+      </section>`;
+  }
+
+  function bindFallbackRetry(page) {
+    page?.querySelector('[data-freelance-retry]')?.addEventListener('click', async event => {
+      const button = event.currentTarget;
+      button.disabled = true;
+      button.textContent = 'Actualizando…';
+      try {
+        if (typeof loadApplicationData === 'function') await loadApplicationData();
+        normalizeFreelanceCourses();
+        if (typeof renderCourses === 'function') renderCourses();
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Actualizar cursos';
+      }
+    });
+  }
+
+  function recoverBlankCoursesSurface(error = null) {
+    const routeName = String(location.hash || '#home').replace(/^#/, '').split('/')[0] || 'home';
+    if (routeName !== 'courses') return;
+    const page = document.querySelector('#page');
+    if (!page) return;
+    const courses = normalizeFreelanceCourses();
+    const hasExpectedContent = page.querySelector('.courses-page-heading, .learning-course-list, .empty-state, #course-grid');
+    if (hasExpectedContent && !error) return;
+    page.innerHTML = fallbackCoursesMarkup(courses, error);
+    bindFallbackRetry(page);
+  }
 
   try {
     if (typeof PUBLIC_PROGRAMS !== 'undefined') {
@@ -66,15 +153,29 @@
     const previousLoadApplicationData = loadApplicationData;
     loadApplicationData = async function freelanceLoadApplicationData(...args) {
       const result = await previousLoadApplicationData(...args);
-      if (typeof state !== 'undefined' && Array.isArray(state.courses)) {
-        state.courses = state.courses.filter(course =>
-          allowedSlugs.has(String(course?.slug || '')) && course?.status === 'published'
-        );
-      }
+      normalizeFreelanceCourses();
       return result;
     };
   } catch (error) {
     console.warn('No se pudo reforzar el filtro de cursos Freelance:', error);
+  }
+
+  try {
+    const previousRenderCourses = renderCourses;
+    renderCourses = function freelanceRenderCourses(...args) {
+      normalizeFreelanceCourses();
+      try {
+        const result = previousRenderCourses(...args);
+        requestAnimationFrame(() => recoverBlankCoursesSurface());
+        return result;
+      } catch (error) {
+        console.error('Error al renderizar Mis cursos:', error);
+        recoverBlankCoursesSurface(error);
+        return null;
+      }
+    };
+  } catch (error) {
+    console.warn('No se pudo reforzar la vista Mis cursos:', error);
   }
 
   try {
@@ -113,4 +214,8 @@
   } catch (error) {
     console.warn('No se pudo sustituir el catálogo público por la ruta Freelance:', error);
   }
+
+  window.addEventListener('hashchange', () => setTimeout(() => recoverBlankCoursesSurface(), 120));
+  setTimeout(() => recoverBlankCoursesSurface(), 1200);
+  window.ACADEMY_FREELANCE_V36 = Object.freeze({ version: VERSION, refresh: recoverBlankCoursesSurface });
 })();
