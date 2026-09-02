@@ -9,6 +9,20 @@
   const COMMUNITY_HREF = 'academy-premium-community-v33.css?v=33.0.0';
   const PUSH_HREF = 'academy-push-v34.css?v=34.0.0';
 
+  function preservePasswordRecoveryIntent() {
+    const hashParams = new URLSearchParams(location.hash.replace(/^#/, ''));
+    if (hashParams.get('type') !== 'recovery') return;
+
+    const url = new URL(location.href);
+    if (url.searchParams.get('type') === 'recovery') return;
+
+    // Supabase procesa y limpia el fragmento de recuperación muy pronto.
+    // Conservamos la intención en la query antes de cargar la librería para
+    // que app.js pueda mostrar siempre el formulario de nueva contraseña.
+    url.searchParams.set('type', 'recovery');
+    history.replaceState(history.state, '', `${url.pathname}${url.search}${url.hash}`);
+  }
+
   function ensureStylesheet(id, href) {
     let link = document.getElementById(id);
     if (!link) {
@@ -93,6 +107,7 @@
   }
 
   async function start() {
+    preservePasswordRecoveryIntent();
     ensureVisualLayers();
     renderStatus('Compás Academy', 'Preparando tu acceso…');
     try {
