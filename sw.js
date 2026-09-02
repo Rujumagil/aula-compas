@@ -1,9 +1,9 @@
-// Compás Academy V35.0.1 — microlearning por tarjetas + PWA cache + Web Push
+// Compás Academy V36.0.0 — catálogo exclusivo de capacitación Freelance + PWA cache + Web Push
 // Legacy CI compatibility markers:
 // compas-academy-v31.0.0-premium-learning · compas-academy-v33.0.0-premium-community
 // bootstrap.js?v=31.0.0 · bootstrap.js?v=33.0.0 · bootstrap.js?v=34.1.0
 // legacy cache marker: compas-academy-v34.1.0-push
-const CACHE = 'compas-academy-v35.0.1-card-learning';
+const CACHE = 'compas-academy-v36.0.0-freelance';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -40,6 +40,7 @@ const STATIC_ASSETS = [
   './academy-brand-visibility-v29-1.js?v=29.1.0',
   './academy-sidebar-user-v29-3.js?v=29.3.0',
   './academy-v7.js?v=7.0.0',
+  './academy-freelance-v36.js?v=36.0.0',
   './academy-premium.js?v=8.0.0',
   './academy-dashboard-v9.js?v=9.0.0',
   './academy-ai-v10.js?v=10.0.0',
@@ -61,7 +62,7 @@ const STATIC_ASSETS = [
   './academy-push-v34.js?v=34.1.0',
   './verificar-certificado.html',
   './verificar-certificado-v16.js?v=16.0.0',
-  './bootstrap.js?v=35.0.1',
+  './bootstrap.js?v=36.0.0',
   './supabase-config.js?v=7.0.0',
   './manifest.json?v=29.0.0',
   './brand/academy/icon.svg?v=29.2.0',
