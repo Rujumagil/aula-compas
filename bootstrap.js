@@ -121,6 +121,7 @@
       await loadScript('app.js?v=6.0.15');
       await loadScript('academy-sidebar-user-v29-3.js?v=29.3.0');
       await loadScript('academy-v7.js?v=7.0.0');
+      await loadScript('academy-freelance-v36.js?v=36.0.0');
       await loadScript('academy-dashboard-v9.js?v=9.0.0');
       await loadScript('academy-ai-v10.js?v=10.0.0');
       await loadScript('academy-assessments-v14.js?v=14.0.0');
