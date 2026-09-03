@@ -121,7 +121,7 @@
       await loadScript('academy-sidebar-user-v29-3.js?v=29.3.0');
       await loadScript('academy-v7.js?v=7.0.0');
       await loadScript('academy-freelance-v36.js?v=36.1.0');
-      await loadScript('academy-dashboard-v9.js?v=9.0.0');
+      await loadScript('academy-dashboard-v9.js?v=9.2.0');
       await loadScript('academy-ai-v10.js?v=10.0.0');
       await loadScript('academy-assessments-v14.js?v=14.0.0');
       await loadScript('academy-assessment-admin-v15.js?v=15.0.0');
@@ -145,9 +145,9 @@
       ensureVisualLayers();
 
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js?v=37.0.0', { updateViaCache: 'none' })
+        navigator.serviceWorker.register('sw.js?v=37.2.0', { updateViaCache: 'none' })
           .then(registration => registration.update())
-          .catch(error => console.warn('No se pudo actualizar el service worker V37:', error));
+          .catch(error => console.warn('No se pudo actualizar el service worker V37.2:', error));
       }
 
       setTimeout(() => {
