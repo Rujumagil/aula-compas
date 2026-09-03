@@ -5,6 +5,7 @@
   const EXPERIENCE_HREF = 'academy-experience-v30.css?v=30.0.0';
   const LEARNING_HREF = 'academy-learning-v31.css?v=31.0.0';
   const CARD_LEARNING_HREF = 'academy-card-learning-v35.css?v=35.0.1';
+  const COURSE_MEDIA_HREF = 'academy-course-media-v37.css?v=37.0.0';
   const JOURNEY_HREF = 'academy-premium-journey-v32.css?v=32.0.0';
   const COMMUNITY_HREF = 'academy-premium-community-v33.css?v=33.0.0';
   const PUSH_HREF = 'academy-push-v34.css?v=34.0.0';
@@ -16,9 +17,6 @@
     const url = new URL(location.href);
     if (url.searchParams.get('type') === 'recovery') return;
 
-    // Supabase procesa y limpia el fragmento de recuperación muy pronto.
-    // Conservamos la intención en la query antes de cargar la librería para
-    // que app.js pueda mostrar siempre el formulario de nueva contraseña.
     url.searchParams.set('type', 'recovery');
     history.replaceState(history.state, '', `${url.pathname}${url.search}${url.hash}`);
   }
@@ -41,6 +39,7 @@
     ensureStylesheet('academy-experience-v30', EXPERIENCE_HREF);
     ensureStylesheet('academy-learning-v31', LEARNING_HREF);
     ensureStylesheet('academy-card-learning-v35', CARD_LEARNING_HREF);
+    ensureStylesheet('academy-course-media-v37', COURSE_MEDIA_HREF);
     ensureStylesheet('academy-premium-journey-v32', JOURNEY_HREF);
     ensureStylesheet('academy-premium-community-v33', COMMUNITY_HREF);
     const push = ensureStylesheet('academy-push-v34', PUSH_HREF);
@@ -136,6 +135,7 @@
       await loadScript('academy-course-landings-v27.js?v=27.0.0');
       await loadScript('academy-experience-v30.js?v=30.0.0');
       await loadScript('academy-learning-v31.js?v=31.0.0');
+      await loadScript('academy-course-media-v37.js?v=37.0.0');
       await loadScript('academy-card-learning-v35.js?v=35.0.1');
       await loadScript('academy-premium-journey-v32.js?v=32.0.0');
       await loadScript('academy-premium-community-v33.js?v=33.0.0');
@@ -144,9 +144,9 @@
       ensureVisualLayers();
 
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js?v=36.1.0', { updateViaCache: 'none' })
+        navigator.serviceWorker.register('sw.js?v=37.0.0', { updateViaCache: 'none' })
           .then(registration => registration.update())
-          .catch(error => console.warn('No se pudo actualizar el service worker V36.1:', error));
+          .catch(error => console.warn('No se pudo actualizar el service worker V37:', error));
       }
 
       setTimeout(() => {
