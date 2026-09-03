@@ -1,0 +1,81 @@
+name: Import Compas Academy media
+
+on:
+  push:
+    paths:
+      - 'compas-academy-assets.zip'
+      - 'compas_academy_assets_github_ready.zip'
+      - 'uploads/compas-academy-assets.zip'
+
+permissions:
+  contents: write
+
+jobs:
+  import-academy-media:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Locate asset package
+        id: package
+        shell: bash
+        run: |
+          set -euo pipefail
+          for candidate in \
+            compas-academy-assets.zip \
+            compas_academy_assets_github_ready.zip \
+            uploads/compas-academy-assets.zip; do
+            if [ -f "$candidate" ]; then
+              echo "path=$candidate" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          done
+          echo 'No Academy asset package is present; nothing to import.'
+          echo 'path=' >> "$GITHUB_OUTPUT"
+
+      - name: Import images into Academy folders
+        if: steps.package.outputs.path != ''
+        shell: bash
+        env:
+          PACKAGE: ${{ steps.package.outputs.path }}
+        run: |
+          set -euo pipefail
+          rm -rf .academy-media-import
+          mkdir -p .academy-media-import
+          unzip -q -o "$PACKAGE" -d .academy-media-import
+
+          if [ ! -d .academy-media-import/assets/academy/courses ]; then
+            echo 'The ZIP must contain assets/academy/courses.' >&2
+            find .academy-media-import -maxdepth 4 -type d -print
+            exit 1
+          fi
+
+          mkdir -p assets/academy/courses
+          cp -R .academy-media-import/assets/academy/courses/. assets/academy/courses/
+          rm -rf .academy-media-import
+          rm -f "$PACKAGE"
+
+          count=$(find assets/academy/courses -type f -name '*.webp' | wc -l | tr -d ' ')
+          echo "Imported $count WebP images."
+          if [ "$count" -lt 30 ]; then
+            echo 'Expected at least 30 WebP assets for Levels 1-3.' >&2
+            exit 1
+          fi
+
+      - name: Commit imported Academy media
+        if: steps.package.outputs.path != ''
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A assets/academy/courses compas-academy-assets.zip compas_academy_assets_github_ready.zip uploads/compas-academy-assets.zip 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo 'No media changes to commit.'
+            exit 0
+          fi
+          git commit -m 'import Academy course media levels 1-3'
+          git push origin HEAD:main
