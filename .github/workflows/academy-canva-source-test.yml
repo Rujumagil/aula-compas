@@ -2,8 +2,6 @@ name: Academy Canva source test
 
 on:
   push:
-    paths:
-      - '.github/workflows/academy-canva-source-test.yml'
 
 permissions:
   contents: read
@@ -20,8 +18,4 @@ jobs:
           curl -fL --retry 2 "$SOURCE_URL" -o test.webp
           ls -lh test.webp
           file test.webp
-          python - <<'PY'
-          import struct
-          data=open('test.webp','rb').read(64)
-          print('header', data[:16])
-          PY
+          identify test.webp || true
