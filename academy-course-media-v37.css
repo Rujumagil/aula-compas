@@ -1,0 +1,102 @@
+/* Compás Academy V37 · imágenes oficiales de cursos Freelance */
+
+html[data-academy-course-media="37.0.0"] .academy-course-media-hero{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 220px;
+  gap:18px;
+  align-items:stretch;
+  margin:0 0 24px;
+}
+
+.academy-course-media-banner,
+.academy-course-media-poster{
+  overflow:hidden;
+  border:1px solid rgba(15,51,88,.10);
+  border-radius:24px;
+  background:#fff;
+  box-shadow:0 20px 45px rgba(20,47,78,.10);
+}
+
+.academy-course-media-banner img,
+.academy-course-media-poster img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+.academy-course-media-banner{min-height:280px}
+.academy-course-media-banner img{aspect-ratio:16/7}
+.academy-course-media-poster img{aspect-ratio:4/5;object-position:center top}
+
+.academy-module-media{
+  margin:0 18px 18px;
+  overflow:hidden;
+  border-radius:18px;
+  background:#f5f8fb;
+  border:1px solid rgba(15,51,88,.08);
+}
+.academy-module-media img{
+  display:block;
+  width:100%;
+  aspect-ratio:3/2;
+  object-fit:cover;
+}
+
+.academy-support-media{
+  margin:34px 0 10px;
+}
+.academy-support-media-heading{margin-bottom:16px}
+.academy-support-media-heading h2{margin:5px 0 0;font-size:clamp(1.45rem,2.2vw,2rem)}
+.academy-support-media-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:16px;
+}
+.academy-support-media-grid>a{
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  border-radius:20px;
+  border:1px solid rgba(15,51,88,.10);
+  background:#fff;
+  text-decoration:none;
+  color:inherit;
+  box-shadow:0 14px 34px rgba(20,47,78,.08);
+  transition:transform .18s ease, box-shadow .18s ease;
+}
+.academy-support-media-grid>a:hover{
+  transform:translateY(-3px);
+  box-shadow:0 18px 42px rgba(20,47,78,.13);
+}
+.academy-support-media-grid img{
+  width:100%;
+  aspect-ratio:3/2;
+  object-fit:cover;
+  display:block;
+}
+.academy-support-media-grid strong{padding:14px 16px 4px;font-size:1rem}
+.academy-support-media-grid span{padding:0 16px 16px;color:#176bb3;font-weight:700;font-size:.88rem}
+
+.learning-course-cover img,
+.course-card>img,
+.dash-v9-course img,
+.list-course img,
+.cert-v16-card img{
+  object-fit:cover!important;
+  object-position:center!important;
+}
+
+.academy-media-fallback{
+  object-fit:contain!important;
+  padding:18px;
+  background:#f5f8fb;
+}
+
+@media (max-width:900px){
+  html[data-academy-course-media="37.0.0"] .academy-course-media-hero{
+    grid-template-columns:1fr;
+  }
+  .academy-course-media-poster{display:none}
+  .academy-support-media-grid{grid-template-columns:1fr}
+}
