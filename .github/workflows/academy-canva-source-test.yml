@@ -1,0 +1,27 @@
+name: Academy Canva source test
+
+on:
+  push:
+    paths:
+      - '.github/workflows/academy-canva-source-test.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test-canva-source:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download full-size candidate
+        env:
+          SOURCE_URL: "https://media.canva.com/v2/image-resize/format:WEBP/height:450/quality:100/uri:ifs%3A%2F%2FM%2Feb33d7ac-39a4-4400-8540-6b006ce13d69/watermark:F/width:800?csig=AAAAAAAAAAAAAAAAAAAAAFZkE38Z4YODHET3Si1fBdJJXXKM10VcJSNwRSJhnjzJ&exp=1788468949&osig=AAAAAAAAAAAAAAAAAAAAAEQSIhtv5am3j7hfj90-XvapNcmdhIPPL1I158Uv5IXz&signer=media-rpc"
+        run: |
+          set -euxo pipefail
+          curl -fL --retry 2 "$SOURCE_URL" -o test.webp
+          ls -lh test.webp
+          file test.webp
+          python - <<'PY'
+          import struct
+          data=open('test.webp','rb').read(64)
+          print('header', data[:16])
+          PY
